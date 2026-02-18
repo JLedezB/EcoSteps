@@ -1,16 +1,5 @@
-// ==============================
-// Register.jsx
-// Auth: Registro de usuario (Email/Password)
-// - Formik + Yup para validación
-// - Envía datos al backend (register)
-// - Navega a login al finalizar
-// ==============================
-
 import "../styles/auth.css";
 
-// ==============================
-// Icons
-// ==============================
 import { FaLeaf } from "react-icons/fa";
 import {
   HiOutlineUser,
@@ -22,30 +11,13 @@ import {
   HiOutlineEyeOff,
 } from "react-icons/hi";
 
-// ==============================
-// Router
-// ==============================
 import { Link, useNavigate } from "react-router-dom";
-
-// ==============================
-// React
-// ==============================
 import { useState } from "react";
 
-// ==============================
-// Form / Validation
-// ==============================
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 
-// ==============================
-// Services (API)
-// ==============================
 import { register } from "../services/authService";
-
-// ==============================
-// Validation Schema
-// ==============================
 
 const RegisterSchema = Yup.object().shape({
   nombre: Yup.string().required("Obligatorio"),
@@ -57,25 +29,12 @@ const RegisterSchema = Yup.object().shape({
 });
 
 function Register() {
-  // ==============================
-  // Router / Navigation
-  // ==============================
   const navigate = useNavigate();
-
-  // ==============================
-  // UI State
-  // ==============================
   const [showPassword, setShowPassword] = useState(false);
 
-  // ==============================
-  // Render
-  // ==============================
   return (
     <div className="auth-container">
       <div className="auth-card auth-card-elevated auth-card-animate">
-        {/* =========================
-            Brand / Header
-           ========================= */}
         <div className="auth-brand">
           <h1 className="auth-title">
             EcoSteps SGSS <FaLeaf className="auth-leaf" />
@@ -83,9 +42,6 @@ function Register() {
           <p className="auth-subtitle">Crea tu cuenta en menos de un minuto</p>
         </div>
 
-        {/* =========================
-            Formik Form
-           ========================= */}
         <Formik
           initialValues={{
             nombre: "",
@@ -100,7 +56,6 @@ function Register() {
             try {
               setStatus(null);
 
-              // Payload: respeta tu backend (role) aunque el campo del form sea "rol"
               await register({
                 nombre: values.nombre,
                 apellido: values.apellido,
@@ -110,8 +65,7 @@ function Register() {
                 role: values.rol,
               });
 
-              // Flujo actual: tras registrar, vuelve a login
-              navigate("/");
+              navigate("/login", { replace: true });
             } catch (error) {
               setStatus(error?.message || "Error al registrar usuario");
             } finally {
@@ -121,9 +75,6 @@ function Register() {
         >
           {({ status, isSubmitting, errors, touched }) => (
             <Form className="auth-form">
-              {/* =========================
-                  Nombre / Apellido
-                 ========================= */}
               <div className="auth-grid-2">
                 <div className="mb-3">
                   <label className="auth-label" htmlFor="nombre">
@@ -186,9 +137,6 @@ function Register() {
                 </div>
               </div>
 
-              {/* =========================
-                  Email
-                 ========================= */}
               <div className="mb-3">
                 <label className="auth-label" htmlFor="email">
                   Correo
@@ -213,12 +161,13 @@ function Register() {
                   />
                 </div>
 
-                <ErrorMessage name="email" component="div" className="text-danger small mt-1" />
+                <ErrorMessage
+                  name="email"
+                  component="div"
+                  className="text-danger small mt-1"
+                />
               </div>
 
-              {/* =========================
-                  Password
-                 ========================= */}
               <div className="mb-3">
                 <label className="auth-label" htmlFor="password">
                   Contraseña
@@ -242,7 +191,6 @@ function Register() {
                     autoComplete="new-password"
                   />
 
-                  {/* Toggle show/hide password */}
                   <button
                     type="button"
                     className="auth-eye"
@@ -260,9 +208,6 @@ function Register() {
                 />
               </div>
 
-              {/* =========================
-                  Teléfono
-                 ========================= */}
               <div className="mb-3">
                 <label className="auth-label" htmlFor="telefono">
                   Teléfono
@@ -293,16 +238,15 @@ function Register() {
                 />
               </div>
 
-              {/* =========================
-                  Rol
-                 ========================= */}
               <div className="mb-2">
                 <label className="auth-label" htmlFor="rol">
                   Rol
                 </label>
 
                 <div
-                  className={`auth-input-wrap ${touched.rol && errors.rol ? "is-invalid" : ""}`}
+                  className={`auth-input-wrap ${
+                    touched.rol && errors.rol ? "is-invalid" : ""
+                  }`}
                 >
                   <span className="auth-input-icon">
                     <HiOutlineIdentification />
@@ -315,21 +259,19 @@ function Register() {
                   </Field>
                 </div>
 
-                <ErrorMessage name="rol" component="div" className="text-danger small mt-1" />
+                <ErrorMessage
+                  name="rol"
+                  component="div"
+                  className="text-danger small mt-1"
+                />
               </div>
 
-              {/* =========================
-                  Status error (server/register)
-                 ========================= */}
               {status && (
                 <div className="auth-alert" role="alert">
                   {status}
                 </div>
               )}
 
-              {/* =========================
-                  Submit
-                 ========================= */}
               <button type="submit" className="btn btn-eco w-100" disabled={isSubmitting}>
                 {isSubmitting ? (
                   <span className="d-inline-flex align-items-center justify-content-center gap-2">
@@ -345,16 +287,10 @@ function Register() {
                 )}
               </button>
 
-              {/* =========================
-                  Link: Login
-                 ========================= */}
               <div className="auth-link">
-                <Link to="/">¿Ya tienes cuenta? Inicia sesión</Link>
+                <Link to="/login">¿Ya tienes cuenta? Inicia sesión</Link>
               </div>
 
-              {/* =========================
-                  Footer note
-                 ========================= */}
               <div className="auth-footer-note">
                 <small>Tu información se usa únicamente para la gestión de EcoSteps.</small>
               </div>

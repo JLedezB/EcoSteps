@@ -1,15 +1,9 @@
-// ==============================
-// App.jsx
-// Routing principal EcoSteps
-// - Auth routes
-// - User routes (protected)
-// - Admin routes (protected)
-// - Tickets shared detail
-// - Chatbot (solo user)
-// - Fallback
-// ==============================
-
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+
+// ==============================
+// 0) Landing
+// ==============================
+import LandingPage from "./pages/LandingPage";
 
 // ==============================
 // 1) Auth pages
@@ -50,7 +44,7 @@ import TicketDetail from "./pages/TicketDetail";
 import HelpChatbot from "./pages/HelpChatbot";
 
 // ==============================
-// Smart redirect (root)
+// Smart redirect
 // - Sin token → /login
 // - Admin → /admin
 // - User → /user
@@ -72,9 +66,10 @@ function App() {
     <Router>
       <Routes>
         {/* ==========================
-            AUTH
+            LANDING + AUTH
            ========================== */}
-        <Route path="/" element={<HomeRedirect />} />
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/home" element={<HomeRedirect />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
