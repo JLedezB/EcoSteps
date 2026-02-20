@@ -1,81 +1,57 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 
-// ==============================
 // 0) Landing
-// ==============================
 import LandingPage from "./pages/LandingPage";
 
-// ==============================
 // 1) Auth pages
-// ==============================
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ConfirmEmail from "./pages/ConfirmEmail";
 
-// ==============================
 // 2) Dashboards
-// ==============================
 import UserDashboard from "./pages/UserDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 
-// ==============================
 // 3) Evidence / Reports
-// ==============================
 import EvidenceUpload from "./pages/EvidenceUpload";
 import AdminEvidenceReview from "./pages/AdminEvidenceReview";
 
 import ReportUpload from "./pages/ReportUpload";
 import AdminReportsReview from "./pages/AdminReportsReview";
 
-// ==============================
 // 4) Route guard
-// ==============================
 import ProtectedRoute from "./components/ProtectedRoute";
 
-// ==============================
 // 5) Tickets
-// ==============================
 import UserTickets from "./pages/UserTickets";
 import AdminTickets from "./pages/AdminTickets";
 import TicketDetail from "./pages/TicketDetail";
 
-// ==============================
 // 6) Chatbot (solo user)
-// ==============================
 import HelpChatbot from "./pages/HelpChatbot";
 
-// ==============================
 // Smart redirect
-// - Sin token → /login
-// - Admin → /admin
-// - User → /user
-// ==============================
 const HomeRedirect = () => {
   const token = localStorage.getItem("token");
-  const role = localStorage.getItem("role"); // "user" | "admin"
+  const role = localStorage.getItem("role");
 
   if (!token) return <Navigate to="/login" replace />;
   if (role === "admin") return <Navigate to="/admin" replace />;
   return <Navigate to="/user" replace />;
 };
 
-// ==============================
-// App
-// ==============================
 function App() {
   return (
     <Router>
       <Routes>
-        {/* ==========================
-            LANDING + AUTH
-           ========================== */}
+        {/* LANDING + AUTH */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/home" element={<HomeRedirect />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/confirm-email" element={<ConfirmEmail />} />
 
-        {/* ==========================
-            USER (Protected)
-           ========================== */}
+        {/* USER (Protected) */}
         <Route
           path="/user"
           element={
@@ -132,9 +108,7 @@ function App() {
           }
         />
 
-        {/* ==========================
-            ADMIN (Protected)
-           ========================== */}
+        {/* ADMIN (Protected) */}
         <Route
           path="/admin"
           element={
@@ -181,9 +155,7 @@ function App() {
           }
         />
 
-        {/* ==========================
-            FALLBACK
-           ========================== */}
+        {/* FALLBACK */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>

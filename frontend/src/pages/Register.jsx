@@ -6,7 +6,6 @@ import {
   HiOutlineMail,
   HiOutlineLockClosed,
   HiOutlinePhone,
-  HiOutlineIdentification,
   HiOutlineEye,
   HiOutlineEyeOff,
 } from "react-icons/hi";
@@ -17,7 +16,7 @@ import { useState } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 
-import { register } from "../services/authService";
+import { requestRegisterCode } from "../services/authService";
 
 const RegisterSchema = Yup.object().shape({
   nombre: Yup.string().required("Obligatorio"),
@@ -25,7 +24,6 @@ const RegisterSchema = Yup.object().shape({
   email: Yup.string().email("Correo inválido").required("Obligatorio"),
   password: Yup.string().min(6, "Mínimo 6 caracteres").required("Obligatorio"),
   telefono: Yup.string().required("Obligatorio"),
-  rol: Yup.string().required("Selecciona un rol"),
 });
 
 function Register() {
@@ -39,7 +37,7 @@ function Register() {
           <h1 className="auth-title">
             EcoSteps SGSS <FaLeaf className="auth-leaf" />
           </h1>
-          <p className="auth-subtitle">Crea tu cuenta en menos de un minuto</p>
+          <p className="auth-subtitle">Verifica tu correo para crear tu cuenta</p>
         </div>
 
         <Formik
@@ -49,25 +47,31 @@ function Register() {
             email: "",
             password: "",
             telefono: "",
-            rol: "",
           }}
           validationSchema={RegisterSchema}
           onSubmit={async (values, { setSubmitting, setStatus }) => {
             try {
               setStatus(null);
 
-              await register({
-                nombre: values.nombre,
-                apellido: values.apellido,
-                email: values.email,
-                password: values.password,
-                telefono: values.telefono,
-                role: values.rol,
-              });
+              // 1) pedir código
+              await requestRegisterCode(values.email);
 
-              navigate("/login", { replace: true });
+              // 2) guardar datos temporalmente (para confirmación)
+              sessionStorage.setItem(
+                "pendingRegister",
+                JSON.stringify({
+                  nombre: values.nombre,
+                  apellido: values.apellido,
+                  email: values.email,
+                  password: values.password,
+                  telefono: values.telefono,
+                })
+              );
+
+              // 3) ir a confirmación
+              navigate("/confirm-email", { replace: true });
             } catch (error) {
-              setStatus(error?.message || "Error al registrar usuario");
+              setStatus(error?.message || "Error al enviar código");
             } finally {
               setSubmitting(false);
             }
@@ -81,11 +85,7 @@ function Register() {
                     Nombre
                   </label>
 
-                  <div
-                    className={`auth-input-wrap ${
-                      touched.nombre && errors.nombre ? "is-invalid" : ""
-                    }`}
-                  >
+                  <div className={`auth-input-wrap ${touched.nombre && errors.nombre ? "is-invalid" : ""}`}>
                     <span className="auth-input-icon">
                       <HiOutlineUser />
                     </span>
@@ -99,11 +99,7 @@ function Register() {
                     />
                   </div>
 
-                  <ErrorMessage
-                    name="nombre"
-                    component="div"
-                    className="text-danger small mt-1"
-                  />
+                  <ErrorMessage name="nombre" component="div" className="text-danger small mt-1" />
                 </div>
 
                 <div className="mb-3">
@@ -111,11 +107,7 @@ function Register() {
                     Apellido
                   </label>
 
-                  <div
-                    className={`auth-input-wrap ${
-                      touched.apellido && errors.apellido ? "is-invalid" : ""
-                    }`}
-                  >
+                  <div className={`auth-input-wrap ${touched.apellido && errors.apellido ? "is-invalid" : ""}`}>
                     <span className="auth-input-icon">
                       <HiOutlineUser />
                     </span>
@@ -129,11 +121,7 @@ function Register() {
                     />
                   </div>
 
-                  <ErrorMessage
-                    name="apellido"
-                    component="div"
-                    className="text-danger small mt-1"
-                  />
+                  <ErrorMessage name="apellido" component="div" className="text-danger small mt-1" />
                 </div>
               </div>
 
@@ -142,11 +130,7 @@ function Register() {
                   Correo
                 </label>
 
-                <div
-                  className={`auth-input-wrap ${
-                    touched.email && errors.email ? "is-invalid" : ""
-                  }`}
-                >
+                <div className={`auth-input-wrap ${touched.email && errors.email ? "is-invalid" : ""}`}>
                   <span className="auth-input-icon">
                     <HiOutlineMail />
                   </span>
@@ -161,11 +145,7 @@ function Register() {
                   />
                 </div>
 
-                <ErrorMessage
-                  name="email"
-                  component="div"
-                  className="text-danger small mt-1"
-                />
+                <ErrorMessage name="email" component="div" className="text-danger small mt-1" />
               </div>
 
               <div className="mb-3">
@@ -173,11 +153,7 @@ function Register() {
                   Contraseña
                 </label>
 
-                <div
-                  className={`auth-input-wrap ${
-                    touched.password && errors.password ? "is-invalid" : ""
-                  }`}
-                >
+                <div className={`auth-input-wrap ${touched.password && errors.password ? "is-invalid" : ""}`}>
                   <span className="auth-input-icon">
                     <HiOutlineLockClosed />
                   </span>
@@ -201,11 +177,7 @@ function Register() {
                   </button>
                 </div>
 
-                <ErrorMessage
-                  name="password"
-                  component="div"
-                  className="text-danger small mt-1"
-                />
+                <ErrorMessage name="password" component="div" className="text-danger small mt-1" />
               </div>
 
               <div className="mb-3">
@@ -213,11 +185,7 @@ function Register() {
                   Teléfono
                 </label>
 
-                <div
-                  className={`auth-input-wrap ${
-                    touched.telefono && errors.telefono ? "is-invalid" : ""
-                  }`}
-                >
+                <div className={`auth-input-wrap ${touched.telefono && errors.telefono ? "is-invalid" : ""}`}>
                   <span className="auth-input-icon">
                     <HiOutlinePhone />
                   </span>
@@ -231,39 +199,7 @@ function Register() {
                   />
                 </div>
 
-                <ErrorMessage
-                  name="telefono"
-                  component="div"
-                  className="text-danger small mt-1"
-                />
-              </div>
-
-              <div className="mb-2">
-                <label className="auth-label" htmlFor="rol">
-                  Rol
-                </label>
-
-                <div
-                  className={`auth-input-wrap ${
-                    touched.rol && errors.rol ? "is-invalid" : ""
-                  }`}
-                >
-                  <span className="auth-input-icon">
-                    <HiOutlineIdentification />
-                  </span>
-
-                  <Field as="select" id="rol" name="rol" className="form-select auth-select">
-                    <option value="">Selecciona rol</option>
-                    <option value="user">Voluntario</option>
-                    <option value="admin">Administrador</option>
-                  </Field>
-                </div>
-
-                <ErrorMessage
-                  name="rol"
-                  component="div"
-                  className="text-danger small mt-1"
-                />
+                <ErrorMessage name="telefono" component="div" className="text-danger small mt-1" />
               </div>
 
               {status && (
@@ -275,24 +211,16 @@ function Register() {
               <button type="submit" className="btn btn-eco w-100" disabled={isSubmitting}>
                 {isSubmitting ? (
                   <span className="d-inline-flex align-items-center justify-content-center gap-2">
-                    <span
-                      className="spinner-border spinner-border-sm"
-                      role="status"
-                      aria-hidden="true"
-                    ></span>
-                    Registrando...
+                    <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    Enviando código...
                   </span>
                 ) : (
-                  "Registrarse"
+                  "Enviar código al correo"
                 )}
               </button>
 
               <div className="auth-link">
                 <Link to="/login">¿Ya tienes cuenta? Inicia sesión</Link>
-              </div>
-
-              <div className="auth-footer-note">
-                <small>Tu información se usa únicamente para la gestión de EcoSteps.</small>
               </div>
             </Form>
           )}

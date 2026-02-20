@@ -1,42 +1,15 @@
-// ==============================
-// authService.js
-// Servicios de autenticación
-// - Login
-// - Registro
-// - Google OAuth
-// ==============================
-
 import axios from "axios";
 
-// ==============================
-// 1) Instancia Axios (Auth)
-// ==============================
-// - baseURL aislado para auth
-// - timeout para evitar requests colgados
-// - headers JSON por defecto
 const api = axios.create({
   baseURL: "/api/auth",
   timeout: 10000,
   headers: { "Content-Type": "application/json" },
 });
 
-// ==============================
-// 2) Helpers
-// ==============================
-// Extrae el mejor mensaje de error posible
 const parseError = (err, fallback) => {
-  return (
-    err?.response?.data?.message ||
-    err?.response?.data?.error ||
-    err?.message ||
-    fallback
-  );
+  return err?.response?.data?.message || err?.response?.data?.error || err?.message || fallback;
 };
 
-// ==============================
-// 3) Auth: Login
-// ==============================
-// data = { email, password }
 export const login = async (data) => {
   try {
     const res = await api.post("/login", data);
@@ -46,23 +19,26 @@ export const login = async (data) => {
   }
 };
 
-// ==============================
-// 4) Auth: Register
-// ==============================
-// data = { nombre, apellido, email, password, telefono, role }
-export const register = async (data) => {
+// ✅ NUEVO: pedir código
+export const requestRegisterCode = async (email) => {
   try {
-    const res = await api.post("/register", data);
+    const res = await api.post("/register/request-code", { email });
     return res.data;
   } catch (err) {
-    throw new Error(parseError(err, "Error desconocido en registro"));
+    throw new Error(parseError(err, "Error al enviar código"));
   }
 };
 
-// ==============================
-// 5) Auth: Google OAuth
-// ==============================
-// idToken = token JWT de Firebase
+// ✅ NUEVO: verificar código + crear usuario
+export const verifyRegisterCode = async (payload) => {
+  try {
+    const res = await api.post("/register/verify-code", payload);
+    return res.data;
+  } catch (err) {
+    throw new Error(parseError(err, "Error al verificar código"));
+  }
+};
+
 export const googleAuth = async (idToken) => {
   try {
     const res = await api.post("/google", { idToken });
