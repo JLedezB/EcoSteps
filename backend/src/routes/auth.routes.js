@@ -9,6 +9,9 @@ const { protect } = require("../middlewares/authMiddleware");
 const EmailOtp = require("../models/EmailOtp");
 const resend = require("../config/resend");
 
+// ✅ NUEVO: Password Reset OTP
+const PasswordResetOtp = require("../models/PasswordResetOtp");
+
 const router = express.Router();
 
 // =========================
@@ -167,6 +170,137 @@ router.post("/register/verify-code", async (req, res) => {
   } catch (error) {
     console.error("VERIFY CODE ERROR:", error);
     return res.status(500).json({ message: "Error al verificar código" });
+  }
+});
+
+// =========================
+// ✅ PASSWORD RESET (STEP 1) - REQUEST CODE
+// POST /api/auth/password/request-code
+// body: { email }
+// ✅ AHORA: valida si existe o no (devuelve 404 si no existe)
+// =========================
+router.post("/password/request-code", async (req, res) => {
+  try {
+    const email = String(req.body?.email || "").trim().toLowerCase();
+
+    if (!email || !isValidEmail(email)) {
+      return res.status(400).json({ message: "Correo inválido" });
+    }
+
+    const user = await User.findOne({ email });
+
+    // ✅ valida existencia
+    if (!user) {
+      return res.status(404).json({ message: "Correo no registrado" });
+    }
+
+    // Si es cuenta Google (y no tiene password local), bloquear
+    // OJO: si tu User tiene password select:false, esto podría dar falso positivo.
+    if (user.google && !user.password) {
+      return res.status(400).json({ message: "Esta cuenta usa Google. Inicia sesión con Google" });
+    }
+
+    // Anti-spam simple: si ya se mandó hace < 45s, bloquear
+    const last = await PasswordResetOtp.findOne({ email, used: false }).sort({ createdAt: -1 });
+    if (last?.lastSentAt) {
+      const diffMs = Date.now() - new Date(last.lastSentAt).getTime();
+      if (diffMs < 45 * 1000) {
+        return res.status(429).json({ message: "Espera unos segundos antes de reenviar el código" });
+      }
+    }
+
+    const code = genCode();
+    const codeHash = await bcrypt.hash(code, 10);
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min
+
+    await PasswordResetOtp.create({
+      email,
+      codeHash,
+      expiresAt,
+      used: false,
+      attempts: 0,
+      lastSentAt: new Date(),
+    });
+
+    const from = process.env.RESEND_FROM || "EcoSteps <onboarding@resend.dev>";
+
+    await resend.emails.send({
+      from,
+      to: [email],
+      subject: "Código para restablecer tu contraseña (EcoSteps)",
+      html: `
+        <div style="font-family: Arial, sans-serif; line-height: 1.4">
+          <h2>EcoSteps</h2>
+          <p>Recibimos una solicitud para restablecer tu contraseña.</p>
+          <p>Tu código es:</p>
+          <div style="font-size: 28px; font-weight: 700; letter-spacing: 6px; padding: 12px 0;">
+            ${code}
+          </div>
+          <p>Este código expira en <b>10 minutos</b>.</p>
+          <p>Si no solicitaste esto, ignora este correo.</p>
+        </div>
+      `,
+    });
+
+    return res.status(200).json({ message: "Código enviado al correo" });
+  } catch (error) {
+    console.error("PASSWORD REQUEST CODE ERROR:", error);
+    return res.status(500).json({ message: "Error al enviar código" });
+  }
+});
+
+// =========================
+// ✅ PASSWORD RESET (STEP 2) - VERIFY CODE + UPDATE PASSWORD
+// POST /api/auth/password/verify-code
+// body: { email, code, newPassword }
+// =========================
+router.post("/password/verify-code", async (req, res) => {
+  try {
+    const email = String(req.body?.email || "").trim().toLowerCase();
+    const code = String(req.body?.code || "").trim();
+    const newPassword = String(req.body?.newPassword || "");
+
+    if (!email || !isValidEmail(email)) return res.status(400).json({ message: "Correo inválido" });
+    if (!code || code.length < 4) return res.status(400).json({ message: "Código inválido" });
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ message: "La contraseña debe tener mínimo 6 caracteres" });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "Correo no registrado" });
+
+    if (user.google && !user.password) {
+      return res.status(400).json({ message: "Esta cuenta usa Google. Inicia sesión con Google" });
+    }
+
+    const otp = await PasswordResetOtp.findOne({ email, used: false }).sort({ createdAt: -1 });
+    if (!otp) return res.status(400).json({ message: "Código inválido o expirado" });
+
+    if (otp.expiresAt.getTime() < Date.now()) {
+      return res.status(400).json({ message: "El código expiró. Solicita uno nuevo" });
+    }
+
+    if ((otp.attempts || 0) >= 6) {
+      return res.status(429).json({ message: "Demasiados intentos. Solicita uno nuevo" });
+    }
+
+    const ok = await bcrypt.compare(code, otp.codeHash);
+    otp.attempts = (otp.attempts || 0) + 1;
+    await otp.save();
+
+    if (!ok) return res.status(400).json({ message: "Código incorrecto" });
+
+    otp.used = true;
+    await otp.save();
+
+    // Actualizar password (tu User model normalmente hashea en pre('save'))
+    user.password = newPassword;
+    await user.save();
+
+    return res.status(200).json({ message: "Contraseña restablecida correctamente" });
+  } catch (error) {
+    console.error("PASSWORD VERIFY CODE ERROR:", error);
+    return res.status(500).json({ message: "Error al restablecer contraseña" });
   }
 });
 

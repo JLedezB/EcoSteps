@@ -19,7 +19,7 @@ export const login = async (data) => {
   }
 };
 
-// ✅ NUEVO: pedir código
+// ✅ Registro - pedir código
 export const requestRegisterCode = async (email) => {
   try {
     const res = await api.post("/register/request-code", { email });
@@ -29,7 +29,7 @@ export const requestRegisterCode = async (email) => {
   }
 };
 
-// ✅ NUEVO: verificar código + crear usuario
+// ✅ Registro - verificar código + crear usuario
 export const verifyRegisterCode = async (payload) => {
   try {
     const res = await api.post("/register/verify-code", payload);
@@ -45,5 +45,25 @@ export const googleAuth = async (idToken) => {
     return res.data;
   } catch (err) {
     throw new Error(parseError(err, "Error en Google Auth"));
+  }
+};
+
+// ✅ Password reset - pedir código
+export const requestPasswordResetCode = async (email) => {
+  try {
+    const res = await api.post("/password/request-code", { email });
+    return res.data;
+  } catch (err) {
+    throw new Error(parseError(err, "Error al enviar código de restablecimiento"));
+  }
+};
+
+// ✅ Password reset - verificar código + cambiar password
+export const verifyPasswordResetCode = async ({ email, code, newPassword }) => {
+  try {
+    const res = await api.post("/password/verify-code", { email, code, newPassword });
+    return res.data;
+  } catch (err) {
+    throw new Error(parseError(err, "Error al restablecer contraseña"));
   }
 };

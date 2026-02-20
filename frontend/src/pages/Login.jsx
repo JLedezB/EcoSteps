@@ -1,22 +1,8 @@
-// ==============================
-// Login.jsx
-// Auth: Inicio de sesión (Email/Password + Google)
-// - Formik + Yup para validación
-// - Redirección si ya existe sesión (token)
-// - Google Sign-In con Firebase (popup) + backend googleAuth
-// - ✅ Guarda user completo en AuthContext (nombre/apellido/email/role)
-// ==============================
-
 import "../styles/auth.css";
 
 // Icons
 import { FaLeaf, FaGoogle } from "react-icons/fa";
-import {
-  HiOutlineMail,
-  HiOutlineLockClosed,
-  HiOutlineEye,
-  HiOutlineEyeOff,
-} from "react-icons/hi";
+import { HiOutlineMail, HiOutlineLockClosed, HiOutlineEye, HiOutlineEyeOff } from "react-icons/hi";
 
 // Router
 import { Link, useNavigate } from "react-router-dom";
@@ -84,7 +70,7 @@ function Login() {
       // Extra: userId
       localStorage.setItem("userId", res.user.id);
 
-      // Redirección por rol (por si algún día google pudiera ser admin)
+      // Redirección por rol
       if (res.user.role === "admin") navigate("/admin", { replace: true });
       else navigate("/user", { replace: true });
     } catch (err) {
@@ -147,11 +133,7 @@ function Login() {
                     Correo
                   </label>
 
-                  <div
-                    className={`auth-input-wrap ${
-                      touched.email && errors.email ? "is-invalid" : ""
-                    }`}
-                  >
+                  <div className={`auth-input-wrap ${touched.email && errors.email ? "is-invalid" : ""}`}>
                     <span className="auth-input-icon">
                       <HiOutlineMail />
                     </span>
@@ -166,11 +148,7 @@ function Login() {
                     />
                   </div>
 
-                  <ErrorMessage
-                    name="email"
-                    component="div"
-                    className="text-danger small mt-1"
-                  />
+                  <ErrorMessage name="email" component="div" className="text-danger small mt-1" />
                 </div>
 
                 {/* Password */}
@@ -179,11 +157,7 @@ function Login() {
                     Contraseña
                   </label>
 
-                  <div
-                    className={`auth-input-wrap ${
-                      touched.password && errors.password ? "is-invalid" : ""
-                    }`}
-                  >
+                  <div className={`auth-input-wrap ${touched.password && errors.password ? "is-invalid" : ""}`}>
                     <span className="auth-input-icon">
                       <HiOutlineLockClosed />
                     </span>
@@ -208,13 +182,10 @@ function Login() {
                   </div>
 
                   <div className="d-flex justify-content-between align-items-center mt-2">
-                    <ErrorMessage
-                      name="password"
-                      component="div"
-                      className="text-danger small"
-                    />
+                    <ErrorMessage name="password" component="div" className="text-danger small" />
 
-                    <Link to="#" className="auth-mini-link">
+                    {/* ✅ Link correcto */}
+                    <Link to="/forgot-password" className="auth-mini-link">
                       ¿Olvidaste tu contraseña?
                     </Link>
                   </div>
@@ -231,11 +202,7 @@ function Login() {
                 <button type="submit" className="btn btn-eco mb-3" disabled={disabled}>
                   {isSubmitting ? (
                     <span className="d-inline-flex align-items-center justify-content-center gap-2">
-                      <span
-                        className="spinner-border spinner-border-sm"
-                        role="status"
-                        aria-hidden="true"
-                      ></span>
+                      <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                       Ingresando...
                     </span>
                   ) : (
@@ -257,9 +224,7 @@ function Login() {
                   aria-busy={googleLoading ? "true" : "false"}
                 >
                   <FaGoogle />
-                  <span className="ms-2">
-                    {googleLoading ? "Conectando..." : "Iniciar sesión con Google"}
-                  </span>
+                  <span className="ms-2">{googleLoading ? "Conectando..." : "Iniciar sesión con Google"}</span>
                 </button>
 
                 <div className="auth-link">
