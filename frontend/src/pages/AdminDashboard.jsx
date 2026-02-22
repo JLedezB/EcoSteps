@@ -1,13 +1,13 @@
 // ==============================
 // AdminDashboard.jsx
 // Panel administrador: métricas + CRUD de actividades + navegación a módulos
-// Reorganizado/estructurado mejor (side + topbar + secciones claras)
-// ✅ Misma funcionalidad (mismas rutas, mismas llamadas, mismo CRUD)
+// ✅ Reemplaza window.confirm por modal personalizado (sin "localhost dice")
 // ==============================
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import LogoutButton from "../components/LogoutButton";
+import ConfirmModal from "../components/ConfirmModal";
 
 // ==============================
 // Services (API)
@@ -188,6 +188,10 @@ export default function AdminDashboard() {
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
 
+  // ✅ Modal confirm delete
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [activityToDelete, setActivityToDelete] = useState(null);
+
   // ==============================
   // Navigation (misma funcionalidad)
   // ==============================
@@ -283,17 +287,26 @@ export default function AdminDashboard() {
     }
   };
 
-  const remove = async (id) => {
-    const ok = window.confirm("¿Seguro que deseas eliminar esta actividad?");
-    if (!ok) return;
+  // ✅ Abre modal (sin confirm nativo)
+  const remove = (id) => {
+    setActivityToDelete(id);
+    setShowConfirm(true);
+  };
+
+  // ✅ Confirmar eliminación
+  const confirmDelete = async () => {
+    if (!activityToDelete) return;
 
     try {
       setAlert(null);
-      const res = await deleteActivity(id);
+      const res = await deleteActivity(activityToDelete);
       setAlert({ type: "success", text: res?.message || "Actividad eliminada" });
       await load();
     } catch (err) {
       setAlert({ type: "danger", text: err?.message || "Error al eliminar" });
+    } finally {
+      setShowConfirm(false);
+      setActivityToDelete(null);
     }
   };
 
@@ -386,7 +399,7 @@ export default function AdminDashboard() {
   }, [goReviewReports, goTickets, stats]);
 
   // ==============================
-  // Sidebar actions (layout mejor)
+  // Sidebar actions
   // ==============================
   const scrollTo = (ref) => ref?.current?.scrollIntoView({ behavior: "smooth", block: "start" });
 
@@ -482,9 +495,7 @@ export default function AdminDashboard() {
                 ))}
               </div>
             ) : (
-              <div className="mb-3">
-                {loading ? <div className="text-muted">Cargando métricas...</div> : null}
-              </div>
+              <div className="mb-3">{loading ? <div className="text-muted">Cargando métricas...</div> : null}</div>
             )}
 
             {/* =========================
@@ -750,12 +761,7 @@ export default function AdminDashboard() {
                       </button>
 
                       {editingId ? (
-                        <button
-                          className="btn btn-outline-secondary"
-                          type="button"
-                          onClick={cancelEdit}
-                          disabled={saving}
-                        >
+                        <button className="btn btn-outline-secondary" type="button" onClick={cancelEdit} disabled={saving}>
                           Cancelar
                         </button>
                       ) : (
@@ -794,12 +800,7 @@ export default function AdminDashboard() {
                     >
                       Nueva actividad
                     </button>
-                    <button
-                      className="btn btn-eco-ghost btn-sm"
-                      type="button"
-                      onClick={load}
-                      disabled={loading || saving}
-                    >
+                    <button className="btn btn-eco-ghost btn-sm" type="button" onClick={load} disabled={loading || saving}>
                       {loading ? "Cargando..." : "Refrescar lista"}
                     </button>
                   </div>
@@ -846,19 +847,11 @@ export default function AdminDashboard() {
                           Evidencias
                         </button>
 
-                        <button
-                          className="btn btn-outline-primary btn-sm w-100"
-                          type="button"
-                          onClick={() => startEdit(a)}
-                        >
+                        <button className="btn btn-outline-primary btn-sm w-100" type="button" onClick={() => startEdit(a)}>
                           Editar
                         </button>
 
-                        <button
-                          className="btn btn-outline-danger btn-sm w-100"
-                          type="button"
-                          onClick={() => remove(a._id)}
-                        >
+                        <button className="btn btn-outline-danger btn-sm w-100" type="button" onClick={() => remove(a._id)}>
                           Eliminar
                         </button>
                       </div>
@@ -871,6 +864,18 @@ export default function AdminDashboard() {
             {/* Footer spacing */}
             <div style={{ height: 8 }} />
           </div>
+
+          {/* ✅ Modal confirmación eliminar (sin "localhost dice") */}
+          <ConfirmModal
+            show={showConfirm}
+            title="Eliminar actividad"
+            message="¿Estás seguro que deseas eliminar esta actividad? Esta acción no se puede deshacer."
+            onConfirm={confirmDelete}
+            onCancel={() => {
+              setShowConfirm(false);
+              setActivityToDelete(null);
+            }}
+          />
         </main>
       </div>
     </div>
