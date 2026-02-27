@@ -1,9 +1,24 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import "../styles/landing.css";
 
+
+const NAV_ITEMS = [
+  { id: "modulos", label: "Módulos" },
+  { id: "roles", label: "Roles" },
+  { id: "como-funciona", label: "Cómo funciona" },
+  { id: "beneficios", label: "Beneficios" },
+  { id: "faq", label: "FAQ" },
+];
+
 export default function LandingPage() {
   const [compact, setCompact] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [activeId, setActiveId] = useState("top");
+
+  const year = useMemo(() => new Date().getFullYear(), []);
+
+  const observerRef = useRef(null);
 
   useEffect(() => {
     const onScroll = () => setCompact(window.scrollY > 18);
@@ -12,366 +27,509 @@ export default function LandingPage() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const year = useMemo(() => new Date().getFullYear(), []);
+  // Scroll spy (sección activa)
+  useEffect(() => {
+    const ids = ["top", ...NAV_ITEMS.map((x) => x.id)];
+    const els = ids
+      .map((id) => document.getElementById(id))
+      .filter(Boolean);
+
+    if (!els.length) return;
+
+    if (observerRef.current) observerRef.current.disconnect();
+
+    const obs = new IntersectionObserver(
+      (entries) => {
+        // prioriza la entrada con mayor intersección
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => (b.intersectionRatio ?? 0) - (a.intersectionRatio ?? 0));
+        if (visible[0]?.target?.id) setActiveId(visible[0].target.id);
+      },
+      {
+        root: null,
+        threshold: [0.15, 0.25, 0.4, 0.6],
+        rootMargin: "-20% 0px -65% 0px",
+      }
+    );
+
+    els.forEach((el) => obs.observe(el));
+    observerRef.current = obs;
+
+    return () => obs.disconnect();
+  }, []);
+
+  // Cierra el menú al cambiar tamaño (desktop)
+  useEffect(() => {
+    const onResize = () => {
+      if (window.innerWidth > 980) setMenuOpen(false);
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  const onNavClick = (id) => (e) => {
+    e.preventDefault();
+    const el = document.getElementById(id);
+    if (!el) return;
+    setMenuOpen(false);
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   return (
     <div className="eco-landing">
-      {/* ==========================
-          TOPBAR (compact on scroll)
-         ========================== */}
-      <header className={`eco-landing-topbar ${compact ? "is-compact" : ""}`}>
-        <div className="eco-landing-container eco-landing-topbar-inner">
-          <div className="eco-brand">
-            {/* Si tienes logo:
-                <img className="eco-brand-logo" src="/assets/logo.png" alt="EcoSteps" />
-            */}
+      {/* ======= Topbar ======= */}
+      <header className={`eco-topbar ${compact ? "is-compact" : ""}`}>
+        <div className="eco-container eco-topbar-inner">
+          <Link to="/" className="eco-brand" aria-label="Ir a inicio">
+            <div className="eco-brand-mark" aria-hidden="true">
+              🌿
+            </div>
             <div className="eco-brand-text">
               <div className="eco-brand-name">EcoSteps</div>
-              <div className="eco-brand-sub">SGSS • Servicio Social</div>
+              <div className="eco-brand-sub">SGSS · Servicio Social</div>
             </div>
-          </div>
+          </Link>
 
-          <nav className="eco-landing-nav" aria-label="Navegación principal">
-            <a className="eco-nav-link" href="#modulos">Módulos</a>
-            <a className="eco-nav-link" href="#roles">Roles</a>
-            <a className="eco-nav-link" href="#bolsa">Bolsa de trabajo</a>
-            <a className="eco-nav-link" href="#como-funciona">Cómo funciona</a>
-            <a className="eco-nav-link" href="#beneficios">Beneficios</a>
+          <nav className="eco-nav" aria-label="Navegación principal">
+            {NAV_ITEMS.map((item) => (
+              <a
+                key={item.id}
+                href={`#${item.id}`}
+                className={`eco-nav-link ${activeId === item.id ? "is-active" : ""}`}
+                onClick={onNavClick(item.id)}
+              >
+                {item.label}
+              </a>
+            ))}
           </nav>
 
-          <div className="eco-landing-cta">
-            <Link className="btn btn-eco-ghost" to="/login">Iniciar sesión</Link>
-            <Link className="btn btn-eco-solid" to="/register">Crear cuenta</Link>
+          <div className="eco-actions">
+            <Link className="eco-btn eco-btn-ghost" to="/login">
+              Iniciar sesión
+            </Link>
+            <Link className="eco-btn eco-btn-solid" to="/register">
+              Crear cuenta
+            </Link>
+
+            <button
+              className="eco-burger"
+              type="button"
+              aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
+              aria-expanded={menuOpen}
+              onClick={() => setMenuOpen((v) => !v)}
+            >
+              <span />
+              <span />
+              <span />
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile drawer */}
+        <div className={`eco-drawer ${menuOpen ? "is-open" : ""}`}>
+          <div className="eco-container eco-drawer-inner">
+            <div className="eco-drawer-links">
+              {NAV_ITEMS.map((item) => (
+                <a
+                  key={item.id}
+                  href={`#${item.id}`}
+                  className={`eco-drawer-link ${activeId === item.id ? "is-active" : ""}`}
+                  onClick={onNavClick(item.id)}
+                >
+                  {item.label}
+                </a>
+              ))}
+            </div>
+            <div className="eco-drawer-cta">
+              <Link className="eco-btn eco-btn-ghost" to="/login" onClick={() => setMenuOpen(false)}>
+                Iniciar sesión
+              </Link>
+              <Link className="eco-btn eco-btn-solid" to="/register" onClick={() => setMenuOpen(false)}>
+                Crear cuenta
+              </Link>
+            </div>
           </div>
         </div>
       </header>
 
-      {/* ==========================
-          HERO
-         ========================== */}
+      {/* ======= Hero ======= */}
       <section className="eco-hero" id="top">
-        <div className="eco-landing-container eco-hero-grid">
-          <div className="eco-hero-left eco-anim-in">
-            <div className="eco-hero-badge">
-              <span className="eco-dot" />
-              Plataforma para Servicio Social
+        <div className="eco-container eco-hero-grid">
+          <div className="eco-hero-left eco-anim">
+            <div className="eco-badge">
+              <span className="eco-badge-dot" aria-hidden="true" />
+              Plataforma para gestionar Servicio Social
             </div>
 
-            <h1 className="eco-hero-title">
-              Digitaliza, organiza y valida tu{" "}
-              <span className="eco-hero-highlight">Servicio Social</span> en un solo lugar
+            <h1 className="eco-h1">
+              Todo tu <span className="eco-gradient-text">Servicio Social</span> en un solo lugar:
+              evidencias, reportes y seguimiento real.
             </h1>
 
-            <p className="eco-hero-text">
-              EcoSteps SGSS te ayuda a llevar tu servicio social con claridad:
-              <b> actividades</b>, <b>evidencias</b>, <b>reportes</b> y <b>soporte</b> en una experiencia simple.
+            <p className="eco-lead">
+              EcoSteps SGSS te ayuda a llevar el proceso **con orden y trazabilidad**.
+              Menos confusión, menos “¿dónde va esto?”, más claridad para estudiantes y administradores.
             </p>
 
-            <div className="eco-hero-actions">
-              <Link className="btn btn-eco-solid" to="/register">Empezar</Link>
-              <a className="btn btn-eco-ghost" href="#como-funciona">Ver cómo funciona</a>
+            <div className="eco-hero-cta">
+              <Link className="eco-btn eco-btn-solid eco-btn-lg" to="/register">
+                Empezar ahora
+              </Link>
+              <a className="eco-btn eco-btn-ghost eco-btn-lg" href="#como-funciona" onClick={onNavClick("como-funciona")}>
+                Ver cómo funciona
+              </a>
             </div>
 
-            <div className="eco-hero-stats" aria-label="Resumen rápido">
-              <Stat k="Actividades" v="En un solo lugar" />
-              <Stat k="Evidencias" v="Ordenadas y revisadas" />
-              <Stat k="Soporte" v="EcoBot + Tickets" />
+            <div className="eco-proof">
+              <div className="eco-proof-item">
+                <div className="eco-proof-kpi">Actividades</div>
+                <div className="eco-proof-desc">Publicadas y controladas</div>
+              </div>
+              <div className="eco-proof-item">
+                <div className="eco-proof-kpi">Evidencias</div>
+                <div className="eco-proof-desc">Con estatus y comentarios</div>
+              </div>
+              <div className="eco-proof-item">
+                <div className="eco-proof-kpi">Soporte</div>
+                <div className="eco-proof-desc">EcoBot + Tickets</div>
+              </div>
+            </div>
+
+            <div className="eco-logos">
+              <span className="eco-logos-label">Pensado para:</span>
+              <div className="eco-logos-row" aria-label="Audiencias">
+                <span className="eco-logo-pill">Estudiantes</span>
+                <span className="eco-logo-pill">Coordinación</span>
+                <span className="eco-logo-pill">Administración</span>
+              </div>
             </div>
           </div>
 
-          <div className="eco-hero-right eco-anim-in eco-delay-1">
-            <div className="eco-hero-card">
-              <div className="eco-hero-card-head">
+          <div className="eco-hero-right eco-anim eco-delay-1">
+            <div className="eco-preview">
+              <div className="eco-preview-top">
                 <div>
-                  <div className="eco-hero-card-title">Tu progreso, claro</div>
-                  <div className="eco-hero-card-sub">Ejemplo de seguimiento</div>
+                  <div className="eco-preview-title">Panel de progreso</div>
+                  <div className="eco-preview-sub">Ejemplo de visualización</div>
                 </div>
                 <span className="eco-chip eco-chip-ok">Al día</span>
               </div>
 
-              <div className="eco-hero-kpis">
-                <div className="eco-kpi">
-                  <div className="eco-kpi-title">Actividades</div>
-                  <div className="eco-kpi-value">Disponibles</div>
-                  <div className="eco-kpi-hint">para participar</div>
+              <div className="eco-preview-kpis">
+                <PreviewKpi label="Reportes" value="0/3" hint="bimestrales" />
+                <PreviewKpi label="Evidencias" value="0" hint="pendientes" />
+                <PreviewKpi label="Horas" value="0/480" hint="acumuladas" />
+              </div>
+
+              <div className="eco-progress">
+                <div className="eco-progress-head">
+                  <span>Progreso</span>
+                  <span className="eco-muted">Bimestre 1 · 2 · 3</span>
                 </div>
-                <div className="eco-kpi">
-                  <div className="eco-kpi-title">Evidencias</div>
-                  <div className="eco-kpi-value">Subidas</div>
-                  <div className="eco-kpi-hint">con estatus</div>
+                <div className="eco-progress-track" aria-hidden="true">
+                  <div className="eco-progress-bar" style={{ width: "22%" }} />
                 </div>
-                <div className="eco-kpi">
-                  <div className="eco-kpi-title">Progreso</div>
-                  <div className="eco-kpi-value">Visible</div>
-                  <div className="eco-kpi-hint">por etapas</div>
+                <div className="eco-progress-foot eco-muted">
+                  Cada reporte aprobado equivale a 160h
                 </div>
               </div>
 
-              <div className="eco-hero-list">
-                <div className="eco-row">
-                  <div className="eco-row-main">
-                    <div className="eco-row-title">Evidencia: Actividad</div>
-                    <div className="eco-row-sub">
-                      <span className="eco-chip eco-chip-muted">Documento</span>
-                      <span className="eco-chip eco-chip-ok">Aprobada</span>
-                    </div>
+              <div className="eco-preview-list">
+                <MiniRow
+                  title="Evidencia: Actividad comunitaria"
+                  chips={[
+                    { text: "Documento", tone: "muted" },
+                    { text: "Aprobada", tone: "ok" },
+                  ]}
+                />
+                <MiniRow
+                  title="Ticket: Duda sobre reporte"
+                  chips={[{ text: "En proceso", tone: "warn" }]}
+                />
+                <div className="eco-empty">
+                  <div className="eco-empty-ic" aria-hidden="true">
+                    🌿
                   </div>
-                  <div className="eco-row-actions">
-                    <button className="btn btn-eco-ghost" type="button" disabled>
-                      Ver
-                    </button>
-                  </div>
-                </div>
-
-                <div className="eco-row">
-                  <div className="eco-row-main">
-                    <div className="eco-row-title">Ticket: Duda</div>
-                    <div className="eco-row-sub">
-                      <span className="eco-chip eco-chip-warn">En proceso</span>
-                    </div>
-                  </div>
-                  <div className="eco-row-actions">
-                    <button className="btn btn-eco-ghost" type="button" disabled>
-                      Revisar
-                    </button>
-                  </div>
-                </div>
-
-                <div className="eco-empty-state eco-empty-compact">
-                  <div className="eco-empty-icon">🌿</div>
-                  <h3 className="eco-empty-title">Todo en orden</h3>
-                  <p className="eco-empty-text">
-                    Mantén tu servicio social organizado y con seguimiento.
-                  </p>
+                  <div className="eco-empty-title">Todo claro</div>
+                  <div className="eco-empty-text">Seguimiento simple y verificable.</div>
                 </div>
               </div>
             </div>
 
-            <div className="eco-hero-glow" aria-hidden="true" />
+            <div className="eco-glow" aria-hidden="true" />
           </div>
         </div>
       </section>
 
-      {/* ==========================
-          MÓDULOS
-         ========================== */}
+      {/* ======= Módulos ======= */}
       <section id="modulos" className="eco-section">
-        <div className="eco-landing-container">
-          <h2 className="eco-section-title">Módulos principales</h2>
-          <p className="eco-section-sub">
-            Todo lo que necesitas para llevar tu servicio social de forma ordenada.
-          </p>
+        <div className="eco-container">
+          <div className="eco-section-head">
+            <h2 className="eco-h2">Módulos principales</h2>
+            <p className="eco-sub">
+              Un sistema completo para administrar el servicio social sin perder evidencias, reportes o trazabilidad.
+            </p>
+          </div>
 
-          <div className="eco-feature-grid">
-            <FeatureCard title="Actividades" desc="Consulta actividades y lo que se requiere para completarlas." badge="Estudiante" />
-            <FeatureCard title="Evidencias" desc="Sube evidencias por actividad y revisa su estatus." badge="Seguimiento" />
-            <FeatureCard title="Reportes" desc="Entrega tus reportes de forma clara y centralizada." badge="Entrega" />
-            <FeatureCard title="Tickets" desc="Pide apoyo cuando tengas dudas o problemas." badge="Soporte" />
-            <FeatureCard title="Progreso" desc="Visualiza tu avance y lo pendiente por completar." badge="Control" />
-            <FeatureCard title="EcoBot" desc="Asistente para guiarte en pasos comunes del sistema." badge="Ayuda" />
+          <div className="eco-grid eco-grid-3">
+            <Feature
+              icon="📌"
+              title="Actividades"
+              desc="Explora actividades disponibles, requisitos y cupo. Inscripción clara y controlada."
+            />
+            <Feature
+              icon="📎"
+              title="Evidencias"
+              desc="Sube evidencias por actividad, con estatus (aprobada/pendiente/rechazada) y feedback."
+            />
+            <Feature
+              icon="🧾"
+              title="Reportes"
+              desc="Entrega bimestral centralizada con verificación. Menos correos, más orden."
+            />
+            <Feature
+              icon="📈"
+              title="Progreso"
+              desc="Visualiza horas, reportes y avances por etapas para saber exactamente qué falta."
+            />
+            <Feature
+              icon="🎫"
+              title="Tickets"
+              desc="Soporte con trazabilidad: abre un ticket, sigue el estado y conserva historial."
+            />
+            <Feature
+              icon="🤖"
+              title="EcoBot"
+              desc="Asistente que guía pasos frecuentes (qué subir, dónde, y cómo resolver dudas)."
+            />
           </div>
         </div>
       </section>
 
-      {/* ==========================
-          ROLES
-         ========================== */}
+      {/* ======= Roles ======= */}
       <section id="roles" className="eco-section eco-section-alt">
-        <div className="eco-landing-container">
-          <h2 className="eco-section-title">Roles</h2>
-          <p className="eco-section-sub">
-            EcoSteps SGSS se adapta a lo que necesitas según tu rol.
-          </p>
+        <div className="eco-container">
+          <div className="eco-section-head">
+            <h2 className="eco-h2">Roles</h2>
+            <p className="eco-sub">
+              Dos experiencias claras: estudiantes para ejecutar y admins para validar y acompañar.
+            </p>
+          </div>
 
-          <div className="eco-roles-grid">
-            <RoleCard
+          <div className="eco-grid eco-grid-2">
+            <Role
+              tone="ok"
               title="Prestador (Estudiante)"
-              subtitle="Gestiona tu servicio social"
-              items={[
-                "Explora actividades y participa",
-                "Sube evidencias por actividad",
-                "Entrega reportes en un solo lugar",
-                "Revisa estatus y comentarios",
-                "Solicita ayuda con tickets o EcoBot",
+              subtitle="Gestiona y entrega con orden"
+              bullets={[
+                "Explora actividades e inscríbete",
+                "Sube evidencias y revisa estatus",
+                "Entrega reportes bimestrales",
+                "Recibe comentarios y seguimiento",
+                "Solicita soporte con EcoBot o Tickets",
               ]}
               ctaText="Entrar como estudiante"
               ctaTo="/login"
-              variant="user"
             />
-
-            <RoleCard
+            <Role
+              tone="warn"
               title="Administrador"
-              subtitle="Da seguimiento y valida"
-              items={[
+              subtitle="Valida, acompaña y da trazabilidad"
+              bullets={[
                 "Revisa evidencias y reportes",
-                "Acompaña el proceso con comentarios",
-                "Gestiona solicitudes y tickets",
-                "Mantiene orden y trazabilidad",
+                "Aprueba / rechaza con comentarios",
+                "Gestiona tickets y seguimiento",
+                "Organiza actividades y cupos",
                 "Consulta indicadores de avance",
               ]}
               ctaText="Entrar como admin"
               ctaTo="/login"
-              variant="admin"
             />
           </div>
         </div>
       </section>
 
-      {/* ==========================
-          BOLSA DE TRABAJO (teaser)
-         ========================== */}
-      <section id="bolsa" className="eco-section">
-        <div className="eco-landing-container">
-          <div className="eco-teaser card-soft">
-            <div className="eco-teaser-left">
-              <div className="eco-teaser-badge">Próximamente</div>
-              <h2 className="eco-teaser-title">Bolsa de Trabajo</h2>
-              <p className="eco-teaser-text">
-                Un espacio para conectar a estudiantes con oportunidades alineadas a su perfil y experiencia
-                durante el servicio social.
-              </p>
-
-              <div className="eco-teaser-points">
-                <span className="eco-pill">Oportunidades por área</span>
-                <span className="eco-pill">Perfil y habilidades</span>
-                <span className="eco-pill">Postulación simple</span>
-              </div>
-            </div>
-
-            <div className="eco-teaser-right">
-              <div className="eco-teaser-mini">
-                <div className="eco-teaser-mini-title">Tu perfil</div>
-                <div className="eco-teaser-mini-sub">Intereses • Área • Experiencia</div>
-              </div>
-
-              <div className="eco-teaser-mini">
-                <div className="eco-teaser-mini-title">Recomendaciones</div>
-                <div className="eco-teaser-mini-sub">Oportunidades sugeridas</div>
-              </div>
-
-              <div className="eco-teaser-mini eco-teaser-mini-accent">
-                <div className="eco-teaser-mini-title">Aplicación</div>
-                <div className="eco-teaser-mini-sub">Postula en pocos pasos</div>
-              </div>
-            </div>
+      {/* ======= Cómo funciona ======= */}
+      <section id="como-funciona" className="eco-section">
+        <div className="eco-container">
+          <div className="eco-section-head">
+            <h2 className="eco-h2">Cómo funciona</h2>
+            <p className="eco-sub">Un flujo simple para que el proceso sea claro desde el día 1.</p>
           </div>
-        </div>
-      </section>
-
-      {/* ==========================
-          CÓMO FUNCIONA
-         ========================== */}
-      <section id="como-funciona" className="eco-section eco-section-alt">
-        <div className="eco-landing-container">
-          <h2 className="eco-section-title">Cómo funciona</h2>
-          <p className="eco-section-sub">
-            Un flujo simple para que tu servicio social sea claro y verificable.
-          </p>
 
           <div className="eco-steps">
-            <Step num="1" title="Regístrate" desc="Crea tu cuenta y accede al sistema." />
-            <Step num="2" title="Realiza actividades" desc="Participa y mantén tu avance actualizado." />
-            <Step num="3" title="Entrega evidencias y reportes" desc="Sube tus documentos y revisa el estatus." />
-            <Step num="4" title="Soporte" desc="Resuelve dudas con EcoBot o con tickets de apoyo." />
+            <Step n="1" title="Crea tu cuenta" desc="Regístrate y entra al sistema con tu rol." />
+            <Step n="2" title="Participa en actividades" desc="Inscríbete, completa actividades y registra evidencias." />
+            <Step n="3" title="Sube evidencias y reportes" desc="Carga documentos y revisa estatus con comentarios." />
+            <Step n="4" title="Cierra con trazabilidad" desc="Horas y reportes organizados: todo queda registrado." />
           </div>
-        </div>
-      </section>
 
-      {/* ==========================
-          BENEFICIOS
-         ========================== */}
-      <section id="beneficios" className="eco-section">
-        <div className="eco-landing-container">
-          <h2 className="eco-section-title">Beneficios</h2>
-
-          <div className="eco-benefits-grid">
-            <Benefit title="Estandarización" desc="Todo con un formato claro: evidencias, reportes y actividades." />
-            <Benefit title="Orden" desc="Menos confusión: todo centralizado, con estatus y seguimiento." />
-            <Benefit title="Transparencia" desc="Revisa comentarios y avances en cada entrega." />
-            <Benefit title="Acompañamiento" desc="Soporte guiado para que no te quedes atorado." />
-          </div>
-        </div>
-      </section>
-
-      {/* ==========================
-          CTA
-         ========================== */}
-      <section className="eco-cta-block">
-        <div className="eco-landing-container eco-cta-inner">
-          <div>
-            <h2 className="eco-cta-title">¿Listo para empezar tu servicio social?</h2>
-            <p className="eco-cta-text">
-              Entra a EcoSteps SGSS y lleva tu proceso con claridad.
+          <div className="eco-callout">
+            <div className="eco-callout-title">Diseñado para evitar el caos</div>
+            <p className="eco-callout-text">
+              Centraliza entregas y validaciones. Menos WhatsApp, menos correos, más claridad.
             </p>
           </div>
-          <div className="eco-cta-actions">
-            <Link className="btn btn-eco-solid" to="/register">Crear cuenta</Link>
-            <Link className="btn btn-eco-ghost" to="/login">Iniciar sesión</Link>
+        </div>
+      </section>
+
+      {/* ======= Beneficios ======= */}
+      <section id="beneficios" className="eco-section eco-section-alt">
+        <div className="eco-container">
+          <div className="eco-section-head">
+            <h2 className="eco-h2">Beneficios</h2>
+            <p className="eco-sub">Lo que hace que EcoSteps se sienta “profesional” y útil en la práctica.</p>
+          </div>
+
+          <div className="eco-grid eco-grid-4">
+            <Benefit title="Estandarización" desc="Formatos claros para evidencias y reportes. Sin dudas." />
+            <Benefit title="Orden real" desc="Todo centralizado con estatus, historial y trazabilidad." />
+            <Benefit title="Transparencia" desc="Comentarios y decisiones visibles: menos confusión." />
+            <Benefit title="Acompañamiento" desc="Soporte guiado para avanzar sin atorarte." />
+          </div>
+
+          <div className="eco-testimonials">
+            <Testimonial
+              quote="Ahora sé exactamente qué subir y en qué etapa voy. Ya no ando adivinando."
+              name="Estudiante"
+              role="Prestador"
+            />
+            <Testimonial
+              quote="Validar evidencias es más rápido y queda registro. Eso era lo que faltaba."
+              name="Administrador"
+              role="Coordinación"
+            />
+            <Testimonial
+              quote="El flujo de tickets + bot reduce dudas repetidas y mejora el seguimiento."
+              name="Soporte"
+              role="Operación"
+            />
           </div>
         </div>
       </section>
 
-      {/* ==========================
-          FOOTER
-         ========================== */}
+      {/* ======= FAQ ======= */}
+      <section id="faq" className="eco-section">
+        <div className="eco-container">
+          <div className="eco-section-head">
+            <h2 className="eco-h2">Preguntas frecuentes</h2>
+            <p className="eco-sub">Respuestas cortas, claras y sin humo.</p>
+          </div>
+
+          <div className="eco-faq">
+            <Faq
+              q="¿EcoSteps reemplaza todo lo que ya hago?"
+              a="Centraliza y ordena: actividades, evidencias, reportes y soporte. Reduce fricción y mejora trazabilidad."
+            />
+            <Faq
+              q="¿Cómo se valida una evidencia o reporte?"
+              a="El administrador revisa, aprueba o rechaza con comentarios. El estudiante ve el estatus en su panel."
+            />
+            <Faq
+              q="¿Qué pasa si tengo un problema?"
+              a="Puedes usar EcoBot para dudas comunes o abrir un ticket para seguimiento formal (estado e historial)."
+            />
+          </div>
+
+          <div className="eco-final-cta">
+            <div>
+              <div className="eco-final-cta-title">Listo para empezar tu Servicio Social con orden</div>
+              <div className="eco-final-cta-sub">Crea tu cuenta y prueba el flujo en minutos.</div>
+            </div>
+            <div className="eco-final-cta-actions">
+              <Link className="eco-btn eco-btn-solid eco-btn-lg" to="/register">
+                Crear cuenta
+              </Link>
+              <Link className="eco-btn eco-btn-ghost eco-btn-lg" to="/login">
+                Iniciar sesión
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ======= Footer ======= */}
       <footer className="eco-footer">
-        <div className="eco-landing-container eco-footer-inner">
+        <div className="eco-container eco-footer-inner">
           <div className="eco-footer-left">
-            <div className="eco-footer-brand">EcoSteps SGSS</div>
+            <div className="eco-footer-brand">
+              <span className="eco-footer-mark" aria-hidden="true">🌿</span>
+              EcoSteps SGSS
+            </div>
             <div className="eco-footer-sub">
-              Plataforma para llevar tu servicio social con orden y seguimiento.
+              Plataforma para gestionar Servicio Social con seguimiento, evidencias y soporte.
             </div>
             <div className="eco-footer-copy">© {year} EcoSteps</div>
           </div>
 
           <div className="eco-footer-right">
-            <a className="eco-footer-link" href="#modulos">Módulos</a>
-            <a className="eco-footer-link" href="#roles">Roles</a>
-            <a className="eco-footer-link" href="#bolsa">Bolsa</a>
-            <a className="eco-footer-link" href="#como-funciona">Cómo funciona</a>
+            {NAV_ITEMS.map((item) => (
+              <a key={item.id} className="eco-footer-link" href={`#${item.id}`} onClick={onNavClick(item.id)}>
+                {item.label}
+              </a>
+            ))}
           </div>
         </div>
       </footer>
 
-      {/* Back to top */}
-      <a className="eco-backtop" href="#top" aria-label="Volver arriba">↑</a>
+      <a className="eco-backtop" href="#top" onClick={onNavClick("top")} aria-label="Volver arriba">
+        ↑
+      </a>
     </div>
   );
 }
 
-/* ==============================
-   UI pieces
-============================== */
+/* ========== UI Components ========== */
 
-function Stat({ k, v }) {
+function Feature({ icon, title, desc }) {
   return (
-    <div className="eco-stat">
-      <div className="eco-stat-k">{k}</div>
-      <div className="eco-stat-v">{v}</div>
-    </div>
-  );
-}
-
-function FeatureCard({ title, desc, badge }) {
-  return (
-    <div className="eco-feature card-soft eco-hover-lift">
-      <div className="eco-feature-head">
-        <h3 className="eco-feature-title">{title}</h3>
-        <span className="eco-chip eco-chip-muted">{badge}</span>
+    <div className="eco-card eco-hover">
+      <div className="eco-card-ic" aria-hidden="true">
+        {icon}
       </div>
-      <p className="eco-feature-desc">{desc}</p>
-      <div className="eco-feature-foot">
-        <span className="eco-mini">EcoSteps • SGSS</span>
+      <div className="eco-card-title">{title}</div>
+      <div className="eco-card-desc">{desc}</div>
+    </div>
+  );
+}
+
+function Role({ title, subtitle, bullets, ctaText, ctaTo, tone }) {
+  return (
+    <div className={`eco-role eco-hover ${tone === "warn" ? "is-warn" : "is-ok"}`}>
+      <div className="eco-role-head">
+        <div>
+          <div className="eco-role-title">{title}</div>
+          <div className="eco-role-sub">{subtitle}</div>
+        </div>
+        <span className={`eco-chip ${tone === "warn" ? "eco-chip-warn" : "eco-chip-ok"}`}>
+          {tone === "warn" ? "Gestión" : "Estudiante"}
+        </span>
+      </div>
+
+      <ul className="eco-role-list">
+        {bullets.map((b, i) => (
+          <li key={i} className="eco-role-item">
+            <span className="eco-check" aria-hidden="true">✓</span>
+            <span>{b}</span>
+          </li>
+        ))}
+      </ul>
+
+      <div className="eco-role-foot">
+        <Link className="eco-btn eco-btn-solid" to={ctaTo}>
+          {ctaText}
+        </Link>
       </div>
     </div>
   );
 }
 
-function Step({ num, title, desc }) {
+function Step({ n, title, desc }) {
   return (
-    <div className="eco-step card-soft eco-hover-lift">
-      <div className="eco-step-num">{num}</div>
-      <div className="eco-step-body">
+    <div className="eco-step eco-hover">
+      <div className="eco-step-n">{n}</div>
+      <div>
         <div className="eco-step-title">{title}</div>
         <div className="eco-step-desc">{desc}</div>
       </div>
@@ -381,35 +539,76 @@ function Step({ num, title, desc }) {
 
 function Benefit({ title, desc }) {
   return (
-    <div className="eco-benefit card-soft eco-hover-lift">
+    <div className="eco-benefit eco-hover">
       <div className="eco-benefit-title">{title}</div>
       <div className="eco-benefit-desc">{desc}</div>
     </div>
   );
 }
 
-function RoleCard({ title, subtitle, items, ctaText, ctaTo, variant }) {
+function Testimonial({ quote, name, role }) {
   return (
-    <div className={`eco-role card-soft eco-hover-lift ${variant === "admin" ? "is-admin" : "is-user"}`}>
-      <div className="eco-role-head">
-        <div>
-          <div className="eco-role-title">{title}</div>
-          <div className="eco-role-sub">{subtitle}</div>
-        </div>
-        <span className={`eco-chip ${variant === "admin" ? "eco-chip-warn" : "eco-chip-ok"}`}>
-          {variant === "admin" ? "Gestión" : "Estudiante"}
+    <div className="eco-testimonial eco-hover">
+      <div className="eco-testimonial-quote">“{quote}”</div>
+      <div className="eco-testimonial-meta">
+        <div className="eco-testimonial-name">{name}</div>
+        <div className="eco-testimonial-role">{role}</div>
+      </div>
+    </div>
+  );
+}
+
+function Faq({ q, a }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <button
+      type="button"
+      className={`eco-faq-item ${open ? "is-open" : ""}`}
+      onClick={() => setOpen((v) => !v)}
+      aria-expanded={open}
+    >
+      <div className="eco-faq-q">
+        <span>{q}</span>
+        <span className="eco-faq-plus" aria-hidden="true">
+          {open ? "−" : "+"}
         </span>
       </div>
+      <div className="eco-faq-a">{a}</div>
+    </button>
+  );
+}
 
-      <ul className="eco-role-list">
-        {items.map((t, i) => (
-          <li key={i} className="eco-role-item">✓ {t}</li>
-        ))}
-      </ul>
+function PreviewKpi({ label, value, hint }) {
+  return (
+    <div className="eco-pkpi">
+      <div className="eco-pkpi-label">{label}</div>
+      <div className="eco-pkpi-value">{value}</div>
+      <div className="eco-pkpi-hint">{hint}</div>
+    </div>
+  );
+}
 
-      <div className="eco-role-foot">
-        <Link className="btn btn-eco-solid" to={ctaTo}>{ctaText}</Link>
+function MiniRow({ title, chips }) {
+  return (
+    <div className="eco-minirow">
+      <div className="eco-minirow-main">
+        <div className="eco-minirow-title">{title}</div>
+        <div className="eco-minirow-chips">
+          {chips.map((c, i) => (
+            <span
+              key={i}
+              className={`eco-chip ${
+                c.tone === "ok" ? "eco-chip-ok" : c.tone === "warn" ? "eco-chip-warn" : "eco-chip-muted"
+              }`}
+            >
+              {c.text}
+            </span>
+          ))}
+        </div>
       </div>
+      <span className="eco-minirow-cta eco-muted" aria-hidden="true">
+        Ver →
+      </span>
     </div>
   );
 }
