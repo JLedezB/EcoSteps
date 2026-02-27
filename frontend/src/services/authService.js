@@ -1,69 +1,105 @@
 import axios from "axios";
 
+// ==============================
+// 1) Axios Instance
+// ==============================
 const api = axios.create({
   baseURL: "/api/auth",
   timeout: 10000,
-  headers: { "Content-Type": "application/json" },
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
 
-const parseError = (err, fallback) => {
-  return err?.response?.data?.message || err?.response?.data?.error || err?.message || fallback;
-};
+// ==============================
+// 2) Error Helper
+// ==============================
+const parseError = (error, fallbackMessage) =>
+  error?.response?.data?.message ||
+  error?.response?.data?.error ||
+  error?.message ||
+  fallbackMessage;
 
-export const login = async (data) => {
+// ==============================
+// 3) Login
+// ==============================
+export const login = async (payload) => {
   try {
-    const res = await api.post("/login", data);
-    return res.data;
-  } catch (err) {
-    throw new Error(parseError(err, "Error desconocido en login"));
+    const { data } = await api.post("/login", payload);
+    return data;
+  } catch (error) {
+    throw new Error(parseError(error, "Error desconocido en login"));
   }
 };
 
-// ✅ Registro - pedir código
+// ==============================
+// 4) Registro (OTP flow)
+// ==============================
+
+// Solicitar código de registro
 export const requestRegisterCode = async (email) => {
   try {
-    const res = await api.post("/register/request-code", { email });
-    return res.data;
-  } catch (err) {
-    throw new Error(parseError(err, "Error al enviar código"));
+    const { data } = await api.post("/register/request-code", { email });
+    return data;
+  } catch (error) {
+    throw new Error(parseError(error, "Error al enviar código"));
   }
 };
 
-// ✅ Registro - verificar código + crear usuario
+// Verificar código y crear usuario
 export const verifyRegisterCode = async (payload) => {
   try {
-    const res = await api.post("/register/verify-code", payload);
-    return res.data;
-  } catch (err) {
-    throw new Error(parseError(err, "Error al verificar código"));
+    const { data } = await api.post("/register/verify-code", payload);
+    return data;
+  } catch (error) {
+    throw new Error(parseError(error, "Error al verificar código"));
   }
 };
 
+// ==============================
+// 5) Google Auth
+// ==============================
 export const googleAuth = async (idToken) => {
   try {
-    const res = await api.post("/google", { idToken });
-    return res.data;
-  } catch (err) {
-    throw new Error(parseError(err, "Error en Google Auth"));
+    const { data } = await api.post("/google", { idToken });
+    return data;
+  } catch (error) {
+    throw new Error(parseError(error, "Error en Google Auth"));
   }
 };
 
-// ✅ Password reset - pedir código
+// ==============================
+// 6) Password Reset (OTP flow)
+// ==============================
+
+// Solicitar código de restablecimiento
 export const requestPasswordResetCode = async (email) => {
   try {
-    const res = await api.post("/password/request-code", { email });
-    return res.data;
-  } catch (err) {
-    throw new Error(parseError(err, "Error al enviar código de restablecimiento"));
+    const { data } = await api.post("/password/request-code", { email });
+    return data;
+  } catch (error) {
+    throw new Error(
+      parseError(error, "Error al enviar código de restablecimiento")
+    );
   }
 };
 
-// ✅ Password reset - verificar código + cambiar password
-export const verifyPasswordResetCode = async ({ email, code, newPassword }) => {
+// Verificar código y cambiar contraseña
+export const verifyPasswordResetCode = async ({
+  email,
+  code,
+  newPassword,
+}) => {
   try {
-    const res = await api.post("/password/verify-code", { email, code, newPassword });
-    return res.data;
-  } catch (err) {
-    throw new Error(parseError(err, "Error al restablecer contraseña"));
+    const { data } = await api.post("/password/verify-code", {
+      email,
+      code,
+      newPassword,
+    });
+    return data;
+  } catch (error) {
+    throw new Error(
+      parseError(error, "Error al restablecer contraseña")
+    );
   }
 };

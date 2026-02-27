@@ -1,30 +1,17 @@
-// ==============================
-// api.js
-// Cliente HTTP centralizado (Axios)
-// - Base URL común (/api)
-// - Inyección automática de JWT (Bearer)
-// - Manejo uniforme de errores
-// ==============================
 
 import axios from "axios";
 import { getToken } from "./authSession";
 
 // ==============================
-// 1) Instancia base de Axios
+// 1) Instancia base
 // ==============================
-// Usar "/api" permite:
-// - Proxy en desarrollo (Vite / CRA)
-// - No hardcodear dominio (prod / staging)
 const api = axios.create({
   baseURL: "/api",
 });
 
 // ==============================
-// 2) Interceptor de REQUEST
+// 2) Interceptor: Request
 // ==============================
-// Se ejecuta antes de cada petición.
-// - Adjunta el token JWT si existe
-// - Evita repetir Authorization en cada service
 api.interceptors.request.use(
   (config) => {
     const token = getToken();
@@ -39,34 +26,21 @@ api.interceptors.request.use(
 );
 
 // ==============================
-// 3) Interceptor de RESPONSE
+// 3) Interceptor: Response
 // ==============================
-// Se ejecuta en cada respuesta.
-// - Deja pasar respuestas correctas
-// - Normaliza errores con un mensaje limpio
 api.interceptors.response.use(
-  // Respuesta exitosa
   (response) => response,
-
-  // Error
   (error) => {
-    const msg =
+    const message =
       error?.response?.data?.message ||
       error?.message ||
       "Error en la petición";
 
-    // Se rechaza con Error estándar para que
-    // los services y la UI manejen `.message`
-    return Promise.reject(new Error(msg));
+    return Promise.reject(new Error(message));
   }
 );
 
 // ==============================
 // 4) Export
 // ==============================
-// Este cliente debe usarse en:
-// - activityService
-// - ticketService
-// - evidenceService
-// - reportService
 export default api;

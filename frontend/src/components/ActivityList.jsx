@@ -4,6 +4,7 @@
 // - Modo admin: botones Editar / Eliminar
 // - Modo user: Inscribirme / Cancelar inscripción
 // - Calcula si el usuario actual ya está inscrito
+// ✅ Fecha: formateo estable (UTC)
 // ==============================
 
 import { getUserId } from "../services/authSession";
@@ -33,7 +34,6 @@ function ActivityList({
   // ==============================
   // 2) Sesión / user actual
   // ==============================
-  // Se usa para determinar si el usuario ya está inscrito en cada actividad
   const myId = getUserId();
 
   // ==============================
@@ -42,37 +42,28 @@ function ActivityList({
   return (
     <div className="activity-list">
       {activities.map((a) => {
-        // ------------------------------
-        // Estado / disponibilidad
-        // ------------------------------
         const noCupo = a.cupoDisponible <= 0;
         const cerrada = a.estado !== "activa";
 
-        // ------------------------------
-        // Inscripción del usuario
-        // ------------------------------
-        // participants: array de IDs (ObjectId) o strings
         const participants = a.participants || [];
 
-        // Compara en string para evitar diferencias de tipo (ObjectId vs string)
         const isJoined = myId
           ? participants.some((p) => p.toString() === myId.toString())
           : false;
 
-        // ------------------------------
-        // UI
-        // ------------------------------
         return (
           <div key={a._id} className="activity-card">
-            {/* Info principal */}
             <div className="activity-title">{a.titulo}</div>
             <div className="activity-desc">{a.descripcion}</div>
 
-            {/* Meta */}
             <div className="activity-meta">
               <div>
                 <strong>📅 Fecha:</strong>{" "}
-                {a.fecha ? new Date(a.fecha).toLocaleDateString() : "—"}
+                {a.fecha
+                  ? new Date(a.fecha).toLocaleDateString("es-MX", {
+                      timeZone: "UTC",
+                    })
+                  : "—"}
               </div>
               <div>
                 <strong>📍 Lugar:</strong> {a.lugar || "—"}
@@ -82,16 +73,11 @@ function ActivityList({
               </div>
             </div>
 
-            {/* Badge estado */}
             <span className="activity-badge">
               {a.estado === "activa" ? "ACTIVA" : "CERRADA"}
             </span>
 
-            {/* Acciones */}
             {isAdmin ? (
-              // ==============================
-              // 4) Acciones ADMIN
-              // ==============================
               <div className="mt-3 d-flex gap-2">
                 <button
                   className="btn btn-outline-success btn-sm"
@@ -110,9 +96,6 @@ function ActivityList({
                 </button>
               </div>
             ) : (
-              // ==============================
-              // 5) Acciones USER
-              // ==============================
               <div className="mt-3">
                 {isJoined ? (
                   <button
@@ -129,11 +112,7 @@ function ActivityList({
                     disabled={noCupo || cerrada}
                     onClick={() => onJoin && onJoin(a)}
                   >
-                    {cerrada
-                      ? "Actividad cerrada"
-                      : noCupo
-                      ? "Cupo lleno"
-                      : "Inscribirme"}
+                    {cerrada ? "Actividad cerrada" : noCupo ? "Cupo lleno" : "Inscribirme"}
                   </button>
                 )}
               </div>

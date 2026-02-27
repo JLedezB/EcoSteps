@@ -1,7 +1,12 @@
 // chatbotFlow.js
 
-/* Flow */
+// ==============================
+// Flow
+// ==============================
 export const BOT_FLOW = {
+  // ============================
+  // Root
+  // ============================
   root: {
     text: "¿Qué necesitas? Elige una opción:",
     options: [
@@ -16,7 +21,9 @@ export const BOT_FLOW = {
     ],
   },
 
-  /* About */
+  // ============================
+  // About
+  // ============================
   about: {
     text: "EcoSteps es una plataforma para gestionar Servicio Social: actividades, evidencias, reportes y soporte (tickets).",
     bullets: [
@@ -27,7 +34,9 @@ export const BOT_FLOW = {
     options: [{ label: "Volver al menú", next: "root" }],
   },
 
-  /* Activities */
+  // ============================
+  // Activities
+  // ============================
   activities: {
     text: "Actividades (USER):",
     bullets: [
@@ -45,18 +54,27 @@ export const BOT_FLOW = {
 
   activities_mine: {
     text: "Para ver tus actividades:",
-    bullets: ["Dashboard USER → botón/pestaña 'Mis actividades'.", "Ahí verás la lista y el panel de evidencias por actividad."],
+    bullets: [
+      "Dashboard USER → botón/pestaña 'Mis actividades'.",
+      "Ahí verás la lista y el panel de evidencias por actividad.",
+    ],
     options: [{ label: "Volver a Actividades", next: "activities" }],
   },
 
   activities_cant_join: {
     text: "Razones comunes por las que NO te deja inscribirte:",
-    bullets: ["La actividad está 'CERRADA'.", "No hay cupo disponible.", "Tu sesión expiró (cierra sesión y vuelve a entrar)."],
+    bullets: [
+      "La actividad está 'CERRADA'.",
+      "No hay cupo disponible.",
+      "Tu sesión expiró (cierra sesión y vuelve a entrar).",
+    ],
     tip: "Revisa la fecha y el estado en la tarjeta de la actividad.",
     options: [{ label: "Volver a Actividades", next: "activities" }],
   },
 
-  /* Evidences */
+  // ============================
+  // Evidences
+  // ============================
   evidences: {
     text: "Evidencias (USER):",
     bullets: [
@@ -74,21 +92,33 @@ export const BOT_FLOW = {
 
   evidences_status: {
     text: "Ver estado de evidencia:",
-    bullets: ["Dashboard USER → 'Mis actividades'.", "En 'Evidencias por actividad' verás el badge del estado."],
+    bullets: [
+      "Dashboard USER → 'Mis actividades'.",
+      "En 'Evidencias por actividad' verás el badge del estado.",
+    ],
     options: [{ label: "Volver a Evidencias", next: "evidences" }],
   },
 
   evidences_rejected: {
     text: "Si tu evidencia se rechaza:",
-    bullets: ["Aparecerá como RECHAZADA.", "Puedes volver a subir evidencia si la actividad NO está marcada como completada."],
+    bullets: [
+      "Aparecerá como RECHAZADA.",
+      "Puedes volver a subir evidencia si la actividad NO está marcada como completada.",
+    ],
     tip: "Adjunta una evidencia clara: foto legible / documento correcto.",
     options: [{ label: "Volver a Evidencias", next: "evidences" }],
   },
 
-  /* Reports */
+  // ============================
+  // Reports
+  // ============================
   reports: {
     text: "Reportes bimestrales (USER):",
-    bullets: ["Dashboard USER → botón 'Subir reporte bimestral'.", "Subes tu PDF/archivo.", "Admin lo revisa y lo aprueba/rechaza."],
+    bullets: [
+      "Dashboard USER → botón 'Subir reporte bimestral'.",
+      "Subes tu PDF/archivo.",
+      "Admin lo revisa y lo aprueba/rechaza.",
+    ],
     tip: "Cuando te aprueban reportes, suben tus horas y tu progreso.",
     options: [
       { label: "¿Dónde veo si lo aprobaron?", next: "reports_status" },
@@ -98,11 +128,16 @@ export const BOT_FLOW = {
 
   reports_status: {
     text: "Ver si aprobaron tu reporte:",
-    bullets: ["Dashboard USER → mira el badge 'Reportes aprobados: X/3'.", "Si no sube, el reporte sigue pendiente o fue rechazado."],
+    bullets: [
+      "Dashboard USER → mira el badge 'Reportes aprobados: X/3'.",
+      "Si no sube, el reporte sigue pendiente o fue rechazado.",
+    ],
     options: [{ label: "Volver a Reportes", next: "reports" }],
   },
 
-  /* Tickets */
+  // ============================
+  // Tickets
+  // ============================
   tickets: {
     text: "Tickets (USER): soporte formal dentro del sistema.",
     bullets: [
@@ -141,7 +176,9 @@ export const BOT_FLOW = {
     options: [{ label: "Volver a Tickets", next: "tickets" }],
   },
 
-  /* Account */
+  // ============================
+  // Account
+  // ============================
   account: {
     text: "Cuenta / sesión:",
     bullets: [
@@ -153,7 +190,9 @@ export const BOT_FLOW = {
     options: [{ label: "Volver", next: "root" }],
   },
 
-  /* Admin */
+  // ============================
+  // Admin
+  // ============================
   admin_overview: {
     text: "Admin (resumen rápido):",
     bullets: [
@@ -183,11 +222,17 @@ export const BOT_FLOW = {
 
   admin_reports: {
     text: "Reportes (Admin):",
-    bullets: ["Entra a /admin/reports.", "Verás reportes pendientes con botón para abrir el archivo.", "Apruebas o rechazas."],
+    bullets: [
+      "Entra a /admin/reports.",
+      "Verás reportes pendientes con botón para abrir el archivo.",
+      "Apruebas o rechazas.",
+    ],
     options: [{ label: "Volver a Admin", next: "admin_overview", roles: ["admin"] }],
   },
 
-  /* ML */
+  // ============================
+  // ML
+  // ============================
   ml_overview: {
     text: "ML (detección):",
     bullets: [

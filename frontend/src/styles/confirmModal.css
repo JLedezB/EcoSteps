@@ -1,3 +1,6 @@
+/* =========================================
+   Confirm Modal — Overlay & Container
+========================================= */
 .confirm-overlay {
   position: fixed;
   inset: 0;
@@ -18,6 +21,9 @@
   animation: fadeIn 0.2s ease;
 }
 
+/* =========================================
+   Confirm Modal — Content
+========================================= */
 .confirm-title {
   margin-bottom: 10px;
   font-weight: 600;
@@ -28,12 +34,18 @@
   color: #555;
 }
 
+/* =========================================
+   Confirm Modal — Actions
+========================================= */
 .confirm-actions {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
 }
 
+/* =========================================
+   Animations
+========================================= */
 @keyframes fadeIn {
   from {
     opacity: 0;

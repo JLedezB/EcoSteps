@@ -3,7 +3,7 @@
 // Ticket: detalle + chat (User/Admin)
 // - Carga de ticket por id
 // - Envío de mensajes (texto + adjunto multipart)
-// - Admin: control de estado (open / in_progress / resolved)
+// - Admin: control de estado (open / in_progress / resolved / canceled)
 // - Mejoras UI/UX: toolbar moderna, chat scroll, empty states, composer pro
 // ==============================
 
@@ -14,7 +14,7 @@ import { useNavigate, useParams } from "react-router-dom";
 // Services (API)
 // ==============================
 import {
-  getTicketDetail,
+  getTicketById,
   sendTicketMessage,
   updateTicketStatus,
 } from "../services/ticketService";
@@ -36,6 +36,7 @@ const STATUS = {
   open: { label: "ABIERTO", chip: "eco-chip eco-chip-muted" },
   in_progress: { label: "EN PROCESO", chip: "eco-chip eco-chip-warn" },
   resolved: { label: "RESUELTO", chip: "eco-chip eco-chip-ok" },
+  canceled: { label: "CANCELADO", chip: "eco-chip eco-chip-muted" },
 };
 
 // ==============================
@@ -111,7 +112,7 @@ function TicketDetail() {
       setLoading(true);
       setAlert(null);
 
-      const res = await getTicketDetail(id);
+      const res = await getTicketById(id);
       setTicket(res?.ticket || null);
     } catch (e) {
       setAlert({ type: "danger", text: e?.message || "Error al cargar ticket" });
@@ -135,6 +136,7 @@ function TicketDetail() {
   const statusUI = useMemo(() => STATUS[ticket?.status] || STATUS.open, [ticket?.status]);
 
   const messageCount = (ticket?.messages || []).length;
+  const isCanceled = ticket?.status === "canceled";
 
   // ==============================
   // Actions: send message
@@ -147,11 +149,19 @@ function TicketDetail() {
       return;
     }
 
+    if (isCanceled) {
+      setAlert({ type: "danger", text: "Este ticket está cancelado y no admite mensajes." });
+      return;
+    }
+
     try {
       setSending(true);
       setAlert(null);
 
-      const res = await sendTicketMessage(id, clean, file);
+      // ✅ firma correcta del service:
+      // sendTicketMessage(ticketId, { text, file })
+      const res = await sendTicketMessage(id, { text: clean, file });
+
       setAlert({ type: "success", text: res?.message || "Mensaje enviado" });
 
       setText("");
@@ -159,14 +169,13 @@ function TicketDetail() {
       clearFileInput();
 
       await load();
-      // scroll al final después del refresh
       setTimeout(scrollToBottom, 50);
     } catch (e) {
       setAlert({ type: "danger", text: e?.message || "Error al enviar mensaje" });
     } finally {
       setSending(false);
     }
-  }, [file, id, load, scrollToBottom, text]);
+  }, [file, id, isCanceled, load, scrollToBottom, text]);
 
   // ==============================
   // Actions: update status (admin)
@@ -337,6 +346,16 @@ function TicketDetail() {
 
                     <button
                       type="button"
+                      className={`eco-segment-btn ${ticket.status === "canceled" ? "is-active" : ""}`}
+                      onClick={() => setTicketStatus("canceled")}
+                      disabled={sending}
+                      title="Cancelar ticket"
+                    >
+                      Cancelar
+                    </button>
+
+                    <button
+                      type="button"
                       className="eco-segment-btn"
                       onClick={() => setTicketStatus("resolved")}
                       disabled={sending}
@@ -356,6 +375,7 @@ function TicketDetail() {
                 ) : (
                   <span className="eco-chip eco-chip-muted">Sin actividad</span>
                 )}
+                {isCanceled ? <span className="eco-chip eco-chip-muted">No admite mensajes</span> : null}
               </div>
             </div>
 
@@ -363,9 +383,7 @@ function TicketDetail() {
             <div className="eco-chat-wrap mt-3">
               <div className="eco-chat-head">
                 <div className="fw-semibold">Historial</div>
-                <div className="text-muted small">
-                  Enter para enviar · Shift+Enter para salto
-                </div>
+                <div className="text-muted small">Enter para enviar · Shift+Enter para salto</div>
               </div>
 
               {/* ✅ chat scroll */}
@@ -409,9 +427,9 @@ function TicketDetail() {
                   rows={3}
                   value={text}
                   onChange={(e) => setText(e.target.value)}
-                  placeholder="Escribe un mensaje..."
+                  placeholder={isCanceled ? "Este ticket está cancelado." : "Escribe un mensaje..."}
                   onKeyDown={onKeyDown}
-                  disabled={sending}
+                  disabled={sending || isCanceled}
                 />
 
                 <div className="d-flex gap-2 align-items-center flex-wrap mt-2">
@@ -420,23 +438,19 @@ function TicketDetail() {
                     type="file"
                     className="form-control"
                     onChange={(e) => setFile(e.target.files?.[0] || null)}
-                    disabled={sending}
+                    disabled={sending || isCanceled}
                   />
 
                   <button
                     className="btn btn-success"
                     type="button"
                     onClick={send}
-                    disabled={sending}
+                    disabled={sending || isCanceled}
                     title="Enviar mensaje"
                   >
                     {sending ? (
                       <span className="d-inline-flex align-items-center gap-2">
-                        <span
-                          className="spinner-border spinner-border-sm"
-                          role="status"
-                          aria-hidden="true"
-                        ></span>
+                        <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                         Enviando...
                       </span>
                     ) : (
@@ -452,7 +466,7 @@ function TicketDetail() {
                         setFile(null);
                         clearFileInput();
                       }}
-                      disabled={sending}
+                      disabled={sending || isCanceled}
                     >
                       Quitar archivo
                     </button>

@@ -2,6 +2,7 @@
 // AdminDashboard.jsx
 // Panel administrador: métricas + CRUD de actividades + navegación a módulos
 // ✅ Reemplaza window.confirm por modal personalizado (sin "localhost dice")
+// ✅ Fecha: formateo estable (UTC) + valor input estable
 // ==============================
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -66,11 +67,19 @@ const CHART_COLORS = ["#2ecc71", "#f59e0b", "#3b82f6", "#ef4444", "#8b5cf6"];
 // ==============================
 function fmtDate(d) {
   if (!d) return "—";
-  try {
-    return new Date(d).toLocaleDateString();
-  } catch {
-    return "—";
-  }
+  const dt = new Date(d);
+  if (Number.isNaN(dt.getTime())) return "—";
+
+  // ✅ Fuerza UTC para evitar desfase de día por timezone
+  return dt.toLocaleDateString("es-MX", { timeZone: "UTC" });
+}
+
+function toDateInputValueUTC(d) {
+  if (!d) return "";
+  const dt = new Date(d);
+  if (Number.isNaN(dt.getTime())) return "";
+  // YYYY-MM-DD en UTC (estable)
+  return dt.toISOString().slice(0, 10);
 }
 
 function sumValues(data) {
@@ -233,7 +242,8 @@ export default function AdminDashboard() {
     setForm({
       titulo: a.titulo || "",
       descripcion: a.descripcion || "",
-      fecha: a.fecha ? new Date(a.fecha).toISOString().slice(0, 10) : "",
+      // ✅ Valor input date estable
+      fecha: a.fecha ? toDateInputValueUTC(a.fecha) : "",
       lugar: a.lugar || "",
       cupoTotal: a.cupoTotal || 1,
       estado: a.estado || "activa",
@@ -254,7 +264,7 @@ export default function AdminDashboard() {
     const payload = {
       titulo: form.titulo?.trim(),
       descripcion: form.descripcion?.trim(),
-      fecha: form.fecha,
+      fecha: form.fecha, // "YYYY-MM-DD"
       lugar: form.lugar?.trim(),
       cupoTotal: Number(form.cupoTotal),
       estado: form.estado,
