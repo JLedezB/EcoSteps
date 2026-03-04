@@ -36,7 +36,6 @@ export const login = async (payload) => {
 // 4) Registro (OTP flow)
 // ==============================
 
-// Solicitar código de registro
 export const requestRegisterCode = async (email) => {
   try {
     const { data } = await api.post("/register/request-code", { email });
@@ -46,7 +45,6 @@ export const requestRegisterCode = async (email) => {
   }
 };
 
-// Verificar código y crear usuario
 export const verifyRegisterCode = async (payload) => {
   try {
     const { data } = await api.post("/register/verify-code", payload);
@@ -71,25 +69,16 @@ export const googleAuth = async (idToken) => {
 // ==============================
 // 6) Password Reset (OTP flow)
 // ==============================
-
-// Solicitar código de restablecimiento
 export const requestPasswordResetCode = async (email) => {
   try {
     const { data } = await api.post("/password/request-code", { email });
     return data;
   } catch (error) {
-    throw new Error(
-      parseError(error, "Error al enviar código de restablecimiento")
-    );
+    throw new Error(parseError(error, "Error al enviar código de restablecimiento"));
   }
 };
 
-// Verificar código y cambiar contraseña
-export const verifyPasswordResetCode = async ({
-  email,
-  code,
-  newPassword,
-}) => {
+export const verifyPasswordResetCode = async ({ email, code, newPassword }) => {
   try {
     const { data } = await api.post("/password/verify-code", {
       email,
@@ -98,8 +87,6 @@ export const verifyPasswordResetCode = async ({
     });
     return data;
   } catch (error) {
-    throw new Error(
-      parseError(error, "Error al restablecer contraseña")
-    );
+    throw new Error(parseError(error, "Error al restablecer contraseña"));
   }
 };

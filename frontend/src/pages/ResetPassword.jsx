@@ -5,6 +5,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { requestPasswordResetCode, verifyPasswordResetCode } from "../services/authService";
 
+// ✅ policy igual al backend
+const STRONG_PWD_REGEX =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s])(?!.*\s).{8,72}$/;
+
 export default function ResetPassword() {
   const navigate = useNavigate();
 
@@ -27,9 +31,28 @@ export default function ResetPassword() {
     if (!pending?.email) navigate("/forgot-password", { replace: true });
   }, [pending, navigate]);
 
+  const pwd = newPassword || "";
+  const checks = {
+    len: pwd.length >= 8 && pwd.length <= 72,
+    lower: /[a-z]/.test(pwd),
+    upper: /[A-Z]/.test(pwd),
+    num: /[0-9]/.test(pwd),
+    special: /[^\w\s]/.test(pwd),
+    nospace: !/\s/.test(pwd),
+  };
+  const isStrong = STRONG_PWD_REGEX.test(pwd);
+
   const onVerify = async () => {
     try {
       setStatus(null);
+
+      if (!isStrong) {
+        setStatus(
+          "⚠️ Contraseña insegura: mínimo 8 caracteres, mayúscula, minúscula, número y caracter especial (sin espacios)."
+        );
+        return;
+      }
+
       setLoading(true);
 
       await verifyPasswordResetCode({
@@ -61,6 +84,8 @@ export default function ResetPassword() {
     }
   };
 
+  const canSubmit = !loading && code.trim().length >= 4 && isStrong;
+
   return (
     <div className="auth-container">
       <div className="auth-card auth-card-elevated auth-card-animate">
@@ -88,7 +113,7 @@ export default function ResetPassword() {
             />
           </div>
 
-          <label className="auth-label mt-3">Nueva contraseña</label>
+          <label className="auth-label mt-3">Nueva contraseña (segura)</label>
           <div className="auth-input-wrap">
             <span className="auth-input-icon">
               <HiOutlineLockClosed />
@@ -98,7 +123,7 @@ export default function ResetPassword() {
               className="form-control auth-input"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="Mínimo 6 caracteres"
+              placeholder="Ej: EcoSteps#2026"
               type={showPassword ? "text" : "password"}
               autoComplete="new-password"
             />
@@ -113,14 +138,23 @@ export default function ResetPassword() {
             </button>
           </div>
 
+          <div className="auth-alert mt-2" style={{ opacity: 0.95 }}>
+            <div style={{ fontWeight: 700, marginBottom: 6 }}>
+              {isStrong ? "✅ Contraseña segura" : "⚠️ Requisitos de seguridad"}
+            </div>
+            <div style={{ fontSize: 13, lineHeight: 1.35 }}>
+              • {checks.len ? "✅" : "❌"} 8–72 caracteres{" "}
+              • {checks.upper ? "✅" : "❌"} mayúscula{" "}
+              • {checks.lower ? "✅" : "❌"} minúscula{" "}
+              • {checks.num ? "✅" : "❌"} número{" "}
+              • {checks.special ? "✅" : "❌"} especial{" "}
+              • {checks.nospace ? "✅" : "❌"} sin espacios
+            </div>
+          </div>
+
           {status && <div className="auth-alert mt-3">{status}</div>}
 
-          <button
-            className="btn btn-eco w-100 mt-3"
-            type="button"
-            disabled={loading || code.trim().length < 4 || newPassword.length < 6}
-            onClick={onVerify}
-          >
+          <button className="btn btn-eco w-100 mt-3" type="button" disabled={!canSubmit} onClick={onVerify}>
             {loading ? "Procesando..." : "Restablecer contraseña"}
           </button>
 

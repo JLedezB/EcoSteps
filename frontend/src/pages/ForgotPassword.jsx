@@ -1,9 +1,11 @@
 import "../styles/forgotpassword.css";
 import { FaLeaf } from "react-icons/fa";
 import { HiOutlineMail } from "react-icons/hi";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { requestPasswordResetCode } from "../services/authService";
+
+const isValidEmail = (email = "") => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(String(email).trim());
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
@@ -12,15 +14,24 @@ export default function ForgotPassword() {
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  const emailTrim = useMemo(() => email.trim().toLowerCase(), [email]);
+  const emailOk = useMemo(() => isValidEmail(emailTrim), [emailTrim]);
+
   const onSubmit = async () => {
     try {
       setStatus(null);
+
+      if (!emailOk) {
+        setStatus("⚠️ Ingresa un correo válido.");
+        return;
+      }
+
       setLoading(true);
 
       // ✅ backend devuelve 404 si no existe
-      await requestPasswordResetCode(email.trim());
+      await requestPasswordResetCode(emailTrim);
 
-      sessionStorage.setItem("pendingReset", JSON.stringify({ email: email.trim().toLowerCase() }));
+      sessionStorage.setItem("pendingReset", JSON.stringify({ email: emailTrim }));
 
       setStatus("✅ Código enviado. Revisa tu bandeja.");
       navigate("/reset-password", { replace: true });
@@ -54,17 +65,13 @@ export default function ForgotPassword() {
               placeholder="tu@correo.com"
               autoComplete="email"
               type="email"
+              inputMode="email"
             />
           </div>
 
           {status && <div className="auth-alert mt-3">{status}</div>}
 
-          <button
-            className="btn btn-eco w-100 mt-3"
-            type="button"
-            disabled={loading || email.trim().length < 5}
-            onClick={onSubmit}
-          >
+          <button className="btn btn-eco w-100 mt-3" type="button" disabled={loading || !emailOk} onClick={onSubmit}>
             {loading ? "Enviando..." : "Enviar código"}
           </button>
 

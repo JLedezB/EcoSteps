@@ -19,11 +19,20 @@ import * as Yup from "yup";
 
 import { requestRegisterCode } from "../services/authService";
 
+// ✅ Policy (igual que backend)
+const STRONG_PWD_REGEX =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s])(?!.*\s).{8,72}$/;
+
 const RegisterSchema = Yup.object().shape({
   nombre: Yup.string().trim().required("El nombre es obligatorio"),
   apellido: Yup.string().trim().required("El apellido es obligatorio"),
   email: Yup.string().email("Correo inválido").required("El correo es obligatorio"),
-  password: Yup.string().min(6, "Mínimo 6 caracteres").required("La contraseña es obligatoria"),
+  password: Yup.string()
+    .required("La contraseña es obligatoria")
+    .matches(
+      STRONG_PWD_REGEX,
+      "Contraseña insegura: mínimo 8 caracteres, mayúscula, minúscula, número y caracter especial (sin espacios)."
+    ),
   telefono: Yup.string()
     .trim()
     .matches(/^[0-9()+\-\s]*$/, "Teléfono inválido")
@@ -38,7 +47,6 @@ function Register() {
   return (
     <div className="auth-shell">
       <div className="auth-wrap">
-        {/* Panel izquierdo (visual) */}
         <aside className="auth-side" aria-hidden="true">
           <div className="auth-side-inner">
             <div className="auth-side-badge">
@@ -75,7 +83,6 @@ function Register() {
           <div className="auth-side-glow" />
         </aside>
 
-        {/* Card principal */}
         <main className="auth-card auth-card-pro auth-pop">
           <header className="auth-head">
             <div className="auth-brand">
@@ -103,10 +110,8 @@ function Register() {
               try {
                 setStatus(null);
 
-                // 1) pedir código
                 await requestRegisterCode(values.email);
 
-                // 2) guardar datos temporalmente (para confirmación)
                 sessionStorage.setItem(
                   "pendingRegister",
                   JSON.stringify({
@@ -118,7 +123,6 @@ function Register() {
                   })
                 );
 
-                // 3) ir a confirmación
                 navigate("/confirm-email", { replace: true });
               } catch (error) {
                 setStatus(error?.message || "No se pudo enviar el código. Inténtalo otra vez.");
@@ -127,16 +131,26 @@ function Register() {
               }
             }}
           >
-            {({ status, isSubmitting, errors, touched }) => {
+            {({ status, isSubmitting, errors, touched, values }) => {
               const nombreInvalid = Boolean(touched.nombre && errors.nombre);
               const apellidoInvalid = Boolean(touched.apellido && errors.apellido);
               const emailInvalid = Boolean(touched.email && errors.email);
               const passInvalid = Boolean(touched.password && errors.password);
               const telInvalid = Boolean(touched.telefono && errors.telefono);
 
+              const pwd = values.password || "";
+              const checks = {
+                len: pwd.length >= 8 && pwd.length <= 72,
+                lower: /[a-z]/.test(pwd),
+                upper: /[A-Z]/.test(pwd),
+                num: /[0-9]/.test(pwd),
+                special: /[^\w\s]/.test(pwd),
+                nospace: !/\s/.test(pwd),
+              };
+              const allOk = Object.values(checks).every(Boolean);
+
               return (
                 <Form className="auth-form" noValidate>
-                  {/* Nombre / Apellido */}
                   <div className="auth-grid-2">
                     <div className="auth-field">
                       <label className="auth-label" htmlFor="nombre">
@@ -185,7 +199,6 @@ function Register() {
                     </div>
                   </div>
 
-                  {/* Email */}
                   <div className="auth-field">
                     <label className="auth-label" htmlFor="email">
                       Correo
@@ -211,10 +224,9 @@ function Register() {
                     <ErrorMessage name="email" component="div" className="auth-error" />
                   </div>
 
-                  {/* Password */}
                   <div className="auth-field">
                     <label className="auth-label" htmlFor="password">
-                      Contraseña
+                      Contraseña (segura)
                     </label>
 
                     <div className={`auth-input-wrap ${passInvalid ? "is-invalid" : ""}`}>
@@ -227,7 +239,7 @@ function Register() {
                         name="password"
                         type={showPassword ? "text" : "password"}
                         className="auth-input"
-                        placeholder="Mínimo 6 caracteres"
+                        placeholder="Ej: EcoSteps#2026"
                         autoComplete="new-password"
                         aria-invalid={passInvalid ? "true" : "false"}
                       />
@@ -243,9 +255,21 @@ function Register() {
                     </div>
 
                     <ErrorMessage name="password" component="div" className="auth-error" />
+
+                    <div className="auth-footer-note" style={{ marginTop: 8 }}>
+                      <small>
+                        Requisitos: <b>{allOk ? "✅ contraseña segura" : "⚠️ falta completar"}</b>
+                        <br />
+                        • {checks.len ? "✅" : "❌"} 8–72 caracteres{" "}
+                        • {checks.upper ? "✅" : "❌"} mayúscula{" "}
+                        • {checks.lower ? "✅" : "❌"} minúscula{" "}
+                        • {checks.num ? "✅" : "❌"} número{" "}
+                        • {checks.special ? "✅" : "❌"} especial{" "}
+                        • {checks.nospace ? "✅" : "❌"} sin espacios
+                      </small>
+                    </div>
                   </div>
 
-                  {/* Teléfono */}
                   <div className="auth-field">
                     <label className="auth-label" htmlFor="telefono">
                       Teléfono
@@ -270,14 +294,12 @@ function Register() {
                     <ErrorMessage name="telefono" component="div" className="auth-error" />
                   </div>
 
-                  {/* Status */}
                   {status && (
                     <div className="auth-alert" role="alert" aria-live="polite">
                       {status}
                     </div>
                   )}
 
-                  {/* Submit */}
                   <button type="submit" className="auth-btn auth-btn-primary" disabled={isSubmitting}>
                     {isSubmitting ? (
                       <span className="auth-btn-loading">
@@ -294,9 +316,7 @@ function Register() {
                   </div>
 
                   <div className="auth-footer-note">
-                    <small>
-                      Te enviaremos un código de verificación. Si no lo ves, revisa spam.
-                    </small>
+                    <small>Te enviaremos un código de verificación. Si no lo ves, revisa spam.</small>
                   </div>
                 </Form>
               );

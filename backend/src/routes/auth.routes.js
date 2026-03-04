@@ -27,6 +27,23 @@ const isValidEmail = (email = "") => {
 
 const genCode = () => String(Math.floor(100000 + Math.random() * 900000)); // 6 dígitos
 
+// ✅ Password policy (frontend debe coincidir)
+const passwordPolicy = { minLen: 8, maxLen: 72 };
+
+const isStrongPassword = (pwd = "") => {
+  const p = String(pwd);
+  if (p.length < passwordPolicy.minLen) return false;
+  if (p.length > passwordPolicy.maxLen) return false;
+  if (/\s/.test(p)) return false;
+  if (!/[a-z]/.test(p)) return false;
+  if (!/[A-Z]/.test(p)) return false;
+  if (!/[0-9]/.test(p)) return false;
+  if (!/[^\w\s]/.test(p)) return false;
+  return true;
+};
+
+const passwordPolicyMessage = `La contraseña debe tener mínimo ${passwordPolicy.minLen} caracteres, incluir mayúscula, minúscula, número y caracter especial, y no contener espacios.`;
+
 // =========================
 // REGISTER (STEP 1) - REQUEST CODE
 // POST /api/auth/register/request-code
@@ -99,7 +116,6 @@ router.post("/register/request-code", async (req, res) => {
 // REGISTER (STEP 2) - VERIFY CODE + CREATE USER
 // POST /api/auth/register/verify-code
 // body: { code, nombre, apellido, email, password, telefono }
-// ✅ Al verificar: crea usuario con role "user" y regresa token
 // =========================
 router.post("/register/verify-code", async (req, res) => {
   try {
@@ -115,6 +131,11 @@ router.post("/register/verify-code", async (req, res) => {
 
     if (!nombre || !apellido || !password) {
       return res.status(400).json({ message: "Faltan campos obligatorios" });
+    }
+
+    // ✅ contraseña segura
+    if (!isStrongPassword(password)) {
+      return res.status(400).json({ message: passwordPolicyMessage });
     }
 
     const exists = await User.findOne({ email });
@@ -139,11 +160,9 @@ router.post("/register/verify-code", async (req, res) => {
       return res.status(400).json({ message: "Código incorrecto" });
     }
 
-    // Marcar usado
     otp.used = true;
     await otp.save();
 
-    // Crear user (forzamos role=user, Google=false)
     const user = await User.create({
       nombre,
       apellido,
@@ -174,10 +193,9 @@ router.post("/register/verify-code", async (req, res) => {
 });
 
 // =========================
-// ✅ PASSWORD RESET (STEP 1) - REQUEST CODE
+// PASSWORD RESET (STEP 1) - REQUEST CODE
 // POST /api/auth/password/request-code
 // body: { email }
-// ✅ AHORA: valida si existe o no (devuelve 404 si no existe)
 // =========================
 router.post("/password/request-code", async (req, res) => {
   try {
@@ -188,19 +206,14 @@ router.post("/password/request-code", async (req, res) => {
     }
 
     const user = await User.findOne({ email });
-
-    // ✅ valida existencia
     if (!user) {
       return res.status(404).json({ message: "Correo no registrado" });
     }
 
-    // Si es cuenta Google (y no tiene password local), bloquear
-    // OJO: si tu User tiene password select:false, esto podría dar falso positivo.
     if (user.google && !user.password) {
       return res.status(400).json({ message: "Esta cuenta usa Google. Inicia sesión con Google" });
     }
 
-    // Anti-spam simple: si ya se mandó hace < 45s, bloquear
     const last = await PasswordResetOtp.findOne({ email, used: false }).sort({ createdAt: -1 });
     if (last?.lastSentAt) {
       const diffMs = Date.now() - new Date(last.lastSentAt).getTime();
@@ -211,7 +224,7 @@ router.post("/password/request-code", async (req, res) => {
 
     const code = genCode();
     const codeHash = await bcrypt.hash(code, 10);
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
     await PasswordResetOtp.create({
       email,
@@ -250,7 +263,7 @@ router.post("/password/request-code", async (req, res) => {
 });
 
 // =========================
-// ✅ PASSWORD RESET (STEP 2) - VERIFY CODE + UPDATE PASSWORD
+// PASSWORD RESET (STEP 2) - VERIFY CODE + UPDATE PASSWORD
 // POST /api/auth/password/verify-code
 // body: { email, code, newPassword }
 // =========================
@@ -262,8 +275,10 @@ router.post("/password/verify-code", async (req, res) => {
 
     if (!email || !isValidEmail(email)) return res.status(400).json({ message: "Correo inválido" });
     if (!code || code.length < 4) return res.status(400).json({ message: "Código inválido" });
-    if (!newPassword || newPassword.length < 6) {
-      return res.status(400).json({ message: "La contraseña debe tener mínimo 6 caracteres" });
+
+    // ✅ contraseña segura
+    if (!isStrongPassword(newPassword)) {
+      return res.status(400).json({ message: passwordPolicyMessage });
     }
 
     const user = await User.findOne({ email });
@@ -293,7 +308,6 @@ router.post("/password/verify-code", async (req, res) => {
     otp.used = true;
     await otp.save();
 
-    // Actualizar password (tu User model normalmente hashea en pre('save'))
     user.password = newPassword;
     await user.save();
 
@@ -305,7 +319,7 @@ router.post("/password/verify-code", async (req, res) => {
 });
 
 // =========================
-// LOGIN (igual)
+// LOGIN
 // =========================
 router.post("/login", async (req, res) => {
   try {
@@ -341,7 +355,7 @@ router.post("/login", async (req, res) => {
 });
 
 // =========================
-// GOOGLE AUTH (igual)
+// GOOGLE AUTH
 // =========================
 router.post("/google", async (req, res) => {
   try {
@@ -396,7 +410,7 @@ router.post("/google", async (req, res) => {
 });
 
 // =========================
-// ME (igual)
+// ME
 // =========================
 router.get("/me", protect, async (req, res) => {
   return res.status(200).json({
