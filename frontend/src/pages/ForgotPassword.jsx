@@ -1,4 +1,4 @@
-import "../styles/auth.css";
+import "../styles/forgotpassword.css";
 import { FaLeaf } from "react-icons/fa";
 import { HiOutlineMail } from "react-icons/hi";
 import { useState } from "react";

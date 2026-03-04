@@ -1,4 +1,4 @@
-import "../styles/auth.css";
+import "../styles/confirmemail.css";
 import { FaLeaf } from "react-icons/fa";
 import { HiOutlineMail } from "react-icons/hi";
 import { useEffect, useMemo, useState } from "react";

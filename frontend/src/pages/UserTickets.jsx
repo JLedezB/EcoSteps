@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { AuthContext } from "../context/AuthContext";
@@ -7,7 +7,7 @@ import LogoutButton from "../components/LogoutButton";
 import { getMyTickets, createTicket } from "../services/ticketService";
 import { getMyActivities } from "../services/activityService";
 
-import "../styles/dashboard.css";
+import "../styles/usertickets.css";
 
 const ROUTES = {
   dashboard: "/user",
@@ -17,25 +17,42 @@ const ROUTES = {
 };
 
 const STATUS = {
-  open: { label: "ABIERTO", chip: "eco-chip eco-chip-muted" },
-  in_progress: { label: "EN PROCESO", chip: "eco-chip eco-chip-warn" },
-  resolved: { label: "RESUELTO", chip: "eco-chip eco-chip-ok" },
+  open: { label: "ABIERTO", pill: "dash-pill dash-pill-muted" },
+  in_progress: { label: "EN PROCESO", pill: "dash-pill dash-pill-warn" },
+  resolved: { label: "RESUELTO", pill: "dash-pill dash-pill-ok" },
 };
 
-function fmtDate(d) {
+function fmtDateShort(d) {
   if (!d) return "—";
-  try {
-    return new Date(d).toLocaleString();
-  } catch {
-    return "—";
-  }
+  const x = new Date(d);
+  if (Number.isNaN(x.getTime())) return "—";
+  return x.toLocaleString("es-MX", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function SkeletonTickets() {
+  return (
+    <div className="dash-skel" aria-label="Cargando tickets">
+      <div className="dash-skel-row">
+        <div className="dash-skel-bar w40" />
+        <div className="dash-skel-bar w22" />
+      </div>
+      <div className="dash-skel-card tall" />
+    </div>
+  );
 }
 
 export default function UserTickets() {
   const navigate = useNavigate();
-  const go = (path) => navigate(path);
+  const go = useCallback((path) => navigate(path), [navigate]);
 
   const { user } = useContext(AuthContext);
+  const subjectRef = useRef(null);
 
   const [tickets, setTickets] = useState([]);
   const [activities, setActivities] = useState([]);
@@ -54,8 +71,7 @@ export default function UserTickets() {
     const nombre = user?.nombre || user?.name || "";
     const apellido = user?.apellido || "";
     const full = `${nombre} ${apellido}`.trim();
-    if (full) return full;
-    return user?.email || "Usuario";
+    return full || user?.email || "Usuario";
   }, [user]);
 
   const canSubmit = useMemo(() => {
@@ -66,6 +82,7 @@ export default function UserTickets() {
     try {
       setLoading(true);
       setAlert(null);
+
       const [t, a] = await Promise.all([getMyTickets(), getMyActivities()]);
       setTickets(t?.tickets || []);
       setActivities(a?.activities || []);
@@ -85,6 +102,7 @@ export default function UserTickets() {
 
     if (!canSubmit) {
       setAlert({ type: "danger", text: "Completa asunto y descripción." });
+      subjectRef.current?.focus();
       return;
     }
 
@@ -100,116 +118,123 @@ export default function UserTickets() {
 
       const res = await createTicket(payload);
 
-      setAlert({ type: "success", text: res?.message || "Ticket creado" });
+      setAlert({ type: "success", text: `✅ ${res?.message || "Ticket creado"}` });
       setForm({ subject: "", description: "", activityId: "" });
+
       await load();
+      subjectRef.current?.focus();
     } catch (e2) {
-      setAlert({ type: "danger", text: e2?.message || "Error al crear ticket" });
+      setAlert({ type: "danger", text: `❌ ${e2?.message || "Error al crear ticket"}` });
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="dashboard-container">
-      <div className="eco-shell">
-        {/* Sidebar */}
-        <aside className="eco-sidebar" aria-label="Navegación">
-          <div className="eco-sidebar-head">
-            <span aria-hidden="true">🌿</span>
-            <div className="eco-sidebar-brand">EcoSteps SGSS</div>
+    <div className="dash-page">
+      <div className="dash-shell">
+        {/* SIDEBAR */}
+        <aside className="dash-sidebar" aria-label="Navegación">
+          <div className="dash-sidebar-head">
+            <div className="dash-brand">
+              <span className="dash-brand-icon" aria-hidden="true">🌿</span>
+              <div>
+                <div className="dash-brand-name">EcoSteps</div>
+                <div className="dash-brand-sub">SGSS • Panel estudiante</div>
+              </div>
+            </div>
           </div>
 
-          <nav className="eco-sidebar-nav">
-            <button type="button" className="eco-nav-item" onClick={() => go(ROUTES.dashboard)}>
-              <span aria-hidden="true">▦</span> Dashboard
+          <nav className="dash-nav">
+            <button type="button" className="dash-nav-item" onClick={() => go(ROUTES.dashboard)}>
+              Dashboard
             </button>
-
-            <button type="button" className="eco-nav-item" onClick={() => go(ROUTES.report)}>
-              <span aria-hidden="true">⬆</span> Subir reporte
+            <button type="button" className="dash-nav-item" onClick={() => go(ROUTES.report)}>
+              Subir reporte
             </button>
-
-            <button type="button" className="eco-nav-item is-active" onClick={() => go(ROUTES.tickets)}>
-              <span aria-hidden="true">🎫</span> Tickets
+            <button type="button" className="dash-nav-item is-active" onClick={() => go(ROUTES.tickets)}>
+              Tickets
             </button>
-
-            <button type="button" className="eco-nav-item" onClick={() => go(ROUTES.help)}>
-              <span aria-hidden="true">🤖</span> EcoBot
+            <button type="button" className="dash-nav-item" onClick={() => go(ROUTES.help)}>
+              EcoBot
             </button>
           </nav>
 
-          <div className="eco-sidebar-foot">
-            <div className="eco-level-card">
-              <div className="eco-level-label">Perfil</div>
-              <div className="eco-level-name">{userName}</div>
-              <div className="eco-level-sub">Soporte y seguimiento</div>
-              <div className="mt-3">
+          <div className="dash-sidebar-foot">
+            <div className="dash-profile">
+              <div className="dash-profile-label">Sesión</div>
+              <div className="dash-profile-name">{userName}</div>
+              <div className="dash-profile-sub">Soporte y seguimiento</div>
+              <div className="dash-profile-actions">
                 <LogoutButton />
               </div>
             </div>
           </div>
         </aside>
 
-        {/* Main */}
-        <main className="eco-main" aria-label="Contenido principal">
-          <div className="eco-main-card">
-            {/* Top like slide */}
-            <div className="eco-topbar">
+        {/* MAIN */}
+        <main className="dash-main" aria-label="Tickets">
+          <section className="dash-card">
+            <div className="dash-top">
               <div>
-                <h2 className="eco-greet-title">Mis tickets</h2>
-                <p className="eco-greet-sub">Crea tickets y da seguimiento en el chat.</p>
+                <h2 className="dash-title">Mis tickets</h2>
+                <p className="dash-subtitle">Crea tickets y da seguimiento en el chat.</p>
               </div>
 
-              <div className="eco-topbar-right">
+              <div className="dash-top-actions">
                 <button
-                  className="btn btn-eco-ghost btn-sm"
+                  className="dash-btn dash-btn-ghost"
                   type="button"
                   onClick={load}
                   disabled={loading || submitting}
                   aria-busy={loading ? "true" : "false"}
-                  title="Actualizar lista"
                 >
                   {loading ? "Cargando..." : "Refrescar"}
+                </button>
+
+                <button
+                  className="dash-btn dash-btn-primary"
+                  type="button"
+                  onClick={() => go(ROUTES.dashboard)}
+                  disabled={loading || submitting}
+                >
+                  Volver
                 </button>
               </div>
             </div>
 
             {alert?.text && (
-              <div className={`alert alert-${alert.type} py-2 mt-2 mb-0`}>{alert.text}</div>
+              <div
+                className={`dash-alert ${alert.type === "success" ? "is-success" : "is-danger"}`}
+                role="alert"
+              >
+                {alert.text}
+              </div>
             )}
 
-            {/* Slide-like grid: form left, list right (stacks on mobile) */}
-            <div className="eco-main-grid mt-3">
-              {/* Left: Create ticket */}
-              <section>
-                <div className="card-soft p-3">
-                  <div className="d-flex align-items-end justify-content-between flex-wrap gap-2 mb-2">
+            {loading ? (
+              <SkeletonTickets />
+            ) : (
+              <div className="dash-grid">
+                {/* LEFT: create */}
+                <section className="dash-panel">
+                  <div className="dash-panel-head">
                     <div>
-                      <h5 className="mb-1">Crear ticket</h5>
-                      <p className="text-muted small mb-0">
+                      <div className="dash-panel-title">Crear ticket</div>
+                      <div className="dash-panel-sub">
                         Describe el problema con claridad para una respuesta más rápida.
-                      </p>
+                      </div>
                     </div>
-                    <button
-                      type="button"
-                      className="btn btn-outline-secondary btn-sm"
-                      onClick={() => go(ROUTES.dashboard)}
-                      disabled={loading || submitting}
-                      title="Volver al dashboard"
-                    >
-                      Volver
-                    </button>
                   </div>
 
-                  <form onSubmit={submit}>
-                    <div className="row g-3">
-                      <div className="col-12">
-                        <label className="input-label" htmlFor="subject">
-                          Asunto
-                        </label>
+                  <div className="dash-panel-body">
+                    <form className="dash-upload" onSubmit={submit} noValidate>
+                      <div className="dash-upload-block">
+                        <div className="dash-upload-label">Asunto *</div>
                         <input
-                          id="subject"
-                          className="form-control"
+                          ref={subjectRef}
+                          className="dash-textarea"
+                          style={{ minHeight: 0, height: "52px", resize: "none" }}
                           placeholder="Ej. Problema en actividad"
                           value={form.subject}
                           onChange={(e) => setForm((p) => ({ ...p, subject: e.target.value }))}
@@ -218,13 +243,10 @@ export default function UserTickets() {
                         />
                       </div>
 
-                      <div className="col-12">
-                        <label className="input-label" htmlFor="activity">
-                          Actividad (opcional)
-                        </label>
+                      <div className="dash-upload-block">
+                        <div className="dash-upload-label">Actividad (opcional)</div>
                         <select
-                          id="activity"
-                          className="form-select"
+                          className="dash-select"
                           value={form.activityId}
                           onChange={(e) => setForm((p) => ({ ...p, activityId: e.target.value }))}
                           disabled={submitting}
@@ -236,146 +258,112 @@ export default function UserTickets() {
                             </option>
                           ))}
                         </select>
+                        <div className="dash-help">Si el ticket es sobre una actividad, selecciónala.</div>
                       </div>
 
-                      <div className="col-12">
-                        <label className="input-label" htmlFor="desc">
-                          Descripción
-                        </label>
+                      <div className="dash-upload-block">
+                        <div className="dash-upload-label">Descripción *</div>
                         <textarea
-                          id="desc"
-                          className="form-control"
-                          rows={4}
-                          placeholder="Describe tu problema..."
+                          className="dash-textarea"
+                          rows={5}
+                          placeholder="Describe tu problema… (qué estabas haciendo, qué esperabas, qué pasó)"
                           value={form.description}
                           onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
                           disabled={submitting}
                         />
-                        <div className="small text-muted mt-2">
-                          Tip: incluye qué estabas haciendo y qué esperabas que pasara.
-                        </div>
+                        <div className="dash-help">Tip: incluye pasos y capturas si aplica.</div>
                       </div>
 
-                      <div className="col-12 d-flex gap-2 align-items-center flex-wrap">
+                      <div className="dash-upload-actions">
                         <button
-                          className="btn btn-success"
+                          className="dash-btn dash-btn-primary"
                           type="submit"
                           disabled={!canSubmit || submitting}
                         >
-                          {submitting ? (
-                            <span className="d-inline-flex align-items-center gap-2">
-                              <span
-                                className="spinner-border spinner-border-sm"
-                                role="status"
-                                aria-hidden="true"
-                              ></span>
-                              Creando...
-                            </span>
-                          ) : (
-                            "Crear ticket"
-                          )}
+                          {submitting ? "Creando..." : "Crear ticket"}
                         </button>
 
-                        {!canSubmit && (
-                          <span className="small text-muted">Completa asunto y descripción.</span>
-                        )}
-                      </div>
-                    </div>
-                  </form>
-                </div>
-
-                {/* Small helper block like slide */}
-                <div className="card-soft p-3 mt-3">
-                  <div className="d-flex align-items-start gap-2">
-                    <span aria-hidden="true">✅</span>
-                    <div className="small text-muted">
-                      Una vez creado, entra al ticket para chatear y adjuntar evidencia si hace falta.
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              {/* Right: Tickets list */}
-              <aside aria-label="Lista de tickets">
-                <div className="card-soft p-3">
-                  <div className="d-flex align-items-center justify-content-between gap-2 flex-wrap">
-                    <h5 className="mb-0">Tus tickets</h5>
-                    <button
-                      type="button"
-                      className="btn btn-eco-ghost btn-sm"
-                      onClick={load}
-                      disabled={loading || submitting}
-                    >
-                      Refrescar
-                    </button>
-                  </div>
-
-                  {loading ? (
-                    <div className="py-4 text-center text-muted">Cargando...</div>
-                  ) : tickets.length === 0 ? (
-                    <div className="eco-empty-state mt-3">
-                      <div className="eco-empty-icon" aria-hidden="true">
-                        🎟️
-                      </div>
-                      <h5 className="eco-empty-title">Aún no tienes tickets</h5>
-                      <p className="eco-empty-text">
-                        Crea tu primer ticket y te damos seguimiento por chat.
-                      </p>
-                      <div className="eco-empty-actions">
                         <button
-                          className="btn btn-success btn-sm"
+                          className="dash-btn dash-btn-ghost"
                           type="button"
-                          onClick={() => {
-                            const el = document.getElementById("subject");
-                            if (el) el.focus();
-                          }}
+                          onClick={() => setForm({ subject: "", description: "", activityId: "" })}
+                          disabled={submitting}
                         >
-                          Crear mi primer ticket
+                          Limpiar
                         </button>
+
+                        {!canSubmit && <span className="dash-help">Completa asunto y descripción.</span>}
                       </div>
-                    </div>
-                  ) : (
-                    <div className="d-grid gap-2 mt-3">
-                      {tickets.map((t) => {
-                        const st = STATUS[t.status] || STATUS.open;
 
-                        return (
+                      <div className="dash-note">
+                        <div className="dash-note-title">✅ Recomendación</div>
+                        <div className="dash-note-text">
+                          Después de crearlo, entra al ticket para chatear y adjuntar evidencia si hace falta.
+                        </div>
+                      </div>
+                    </form>
+                  </div>
+                </section>
+
+                {/* RIGHT: list */}
+                <aside className="dash-panel dash-panel-side" aria-label="Lista de tickets">
+                  <div className="dash-panel-head">
+                    <div>
+                      <div className="dash-panel-title">Tus tickets</div>
+                      <div className="dash-panel-sub">Abre un ticket para ver el chat y el historial</div>
+                    </div>
+                  </div>
+
+                  <div className="dash-panel-body">
+                    {tickets.length === 0 ? (
+                      <div className="dash-empty" role="status" aria-live="polite">
+                        <div className="dash-empty-icon" aria-hidden="true">🎫</div>
+                        <h3 className="dash-empty-title">Aún no tienes tickets</h3>
+                        <p className="dash-empty-text">Crea tu primer ticket y te damos seguimiento por chat.</p>
+                        <div className="dash-empty-actions">
                           <button
-                            key={t._id}
+                            className="dash-btn dash-btn-primary"
                             type="button"
-                            className="eco-row"
-                            onClick={() => navigate(`/user/tickets/${t._id}`)}
-                            title="Abrir detalle / chat"
-                            style={{ textAlign: "left" }}
+                            onClick={() => subjectRef.current?.focus()}
                           >
-                            <div className="eco-row-main">
-                              <div className="d-flex align-items-start justify-content-between gap-2">
-                                <div className="eco-row-title">{t.subject}</div>
-                                <span className={st.chip}>{st.label}</span>
-                              </div>
-
-                              <div className="eco-row-sub">
-                                <span className="small text-muted">
-                                  <strong>Creado:</strong> {fmtDate(t.createdAt)}
-                                </span>
-                                <span className="small text-muted">
-                                  <strong>Actividad:</strong> {t.activity?.titulo || "—"}
-                                </span>
-                              </div>
-                            </div>
-
-                            <div className="eco-row-actions">
-                              <span className="btn btn-outline-success btn-sm">Abrir</span>
-                            </div>
+                            Crear mi primer ticket
                           </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </aside>
-            </div>
-          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="ticket-list">
+                        {tickets.map((t) => {
+                          const st = STATUS[t?.status] || STATUS.open;
+
+                          return (
+                            <button
+                              key={t._id}
+                              type="button"
+                              className="ticket-row"
+                              onClick={() => navigate(`/user/tickets/${t._id}`)}
+                              title="Abrir detalle / chat"
+                            >
+                              <div className="ticket-row-main">
+                                <div className="ticket-row-title">{t?.subject || "Ticket"}</div>
+
+                                <div className="ticket-meta">
+                                  <span className={st.pill}>{st.label}</span>
+                                  <span className="dash-pill dash-pill-muted">{fmtDateShort(t?.createdAt)}</span>
+                                  <span className="dash-pill dash-pill-muted">
+                                    {t?.activity?.titulo || "Sin actividad"}
+                                  </span>
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </aside>
+              </div>
+            )}
+          </section>
         </main>
       </div>
     </div>

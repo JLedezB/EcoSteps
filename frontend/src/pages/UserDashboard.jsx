@@ -17,7 +17,7 @@ import {
 import { getMyEvidences } from "../services/evidenceService";
 import { getUserDashboard } from "../services/dashboardService";
 
-import "../styles/dashboard.css";
+import "../styles/userdashboard.css";
 
 const ROUTES = {
   report: "/user/report",
@@ -30,17 +30,20 @@ const MODE = {
   all: {
     label: "Todas",
     fetchActivities: getActivities,
-    fetchEvidences: () => Promise.resolve({ evidences: [] }),
+    fetchEvidences: async () => ({ evidences: [] }),
     showEvidences: false,
+    helperText: "Explora actividades disponibles y participa cuando estés listo.",
   },
   mine: {
     label: "Mis actividades",
     fetchActivities: getMyActivities,
     fetchEvidences: getMyEvidences,
     showEvidences: true,
+    helperText: "Aquí aparecen tus actividades inscritas y el estatus de tus evidencias.",
   },
 };
 
+// pick “mejor evidencia” por actividad
 function pickEvidence(prev, next) {
   if (!prev) return next;
   if (prev?.status === "approved") return prev;
@@ -51,12 +54,12 @@ function pickEvidence(prev, next) {
   return b > a ? next : prev;
 }
 
-function Kpi({ title, value, hint }) {
+function KpiCard({ title, value, hint }) {
   return (
-    <div className="eco-kpi" role="group" aria-label={`KPI ${title}`}>
-      <div className="eco-kpi-title">{title}</div>
-      <div className="eco-kpi-value">{value}</div>
-      {hint ? <div className="eco-kpi-hint">{hint}</div> : null}
+    <div className="dash-kpi" role="group" aria-label={`KPI ${title}`}>
+      <div className="dash-kpi-title">{title}</div>
+      <div className="dash-kpi-value">{value}</div>
+      {hint ? <div className="dash-kpi-hint">{hint}</div> : null}
     </div>
   );
 }
@@ -65,27 +68,23 @@ function EvidenceRow({ title, evidence, onUpload }) {
   const approved = evidence?.status === "approved";
 
   return (
-    <div className="eco-row">
-      <div className="eco-row-main">
-        <div className="eco-row-title">{title}</div>
-        <div className="eco-row-sub">
-          {evidence ? (
-            <StatusBadge status={evidence.status} />
-          ) : (
-            <span className="badge bg-dark">SIN EVIDENCIA</span>
-          )}
-          {approved ? <span className="eco-row-ok">Completada</span> : null}
+    <div className="dash-row">
+      <div className="dash-row-main">
+        <div className="dash-row-title">{title}</div>
+        <div className="dash-row-sub">
+          {evidence ? <StatusBadge status={evidence.status} /> : <span className="dash-pill dash-pill-muted">SIN EVIDENCIA</span>}
+          {approved ? <span className="dash-pill dash-pill-ok">Completada</span> : null}
         </div>
       </div>
 
       <button
-        className="btn btn-outline-success btn-sm"
+        className="dash-btn dash-btn-ghost"
         type="button"
         onClick={onUpload}
         disabled={approved}
         title={approved ? "Ya completaste esta actividad" : "Subir evidencia"}
       >
-        Subir evidencia
+        Subir
       </button>
     </div>
   );
@@ -93,24 +92,38 @@ function EvidenceRow({ title, evidence, onUpload }) {
 
 function EmptyState({ modeLabel, onRefresh, onSwitchMode }) {
   return (
-    <div className="eco-empty-state" role="status" aria-live="polite">
-      <div className="eco-empty-icon" aria-hidden="true">
-        🌿
-      </div>
-      <h5 className="eco-empty-title">No hay actividades disponibles</h5>
-      <p className="eco-empty-text">
-        Estás viendo: <strong>{modeLabel}</strong>. Puedes refrescar o cambiar el
-        filtro.
+    <div className="dash-empty" role="status" aria-live="polite">
+      <div className="dash-empty-icon" aria-hidden="true">🌿</div>
+      <h3 className="dash-empty-title">No hay actividades para mostrar</h3>
+      <p className="dash-empty-text">
+        Estás viendo: <strong>{modeLabel}</strong>. Puedes refrescar o cambiar el filtro.
       </p>
 
-      <div className="eco-empty-actions">
-        <button type="button" className="btn btn-success btn-sm" onClick={onRefresh}>
+      <div className="dash-empty-actions">
+        <button type="button" className="dash-btn dash-btn-primary" onClick={onRefresh}>
           Refrescar
         </button>
-        <button type="button" className="btn btn-outline-success btn-sm" onClick={onSwitchMode}>
+        <button type="button" className="dash-btn dash-btn-ghost" onClick={onSwitchMode}>
           Cambiar a {modeLabel === "Todas" ? "Mis actividades" : "Todas"}
         </button>
       </div>
+    </div>
+  );
+}
+
+function Skeleton() {
+  return (
+    <div className="dash-skel" aria-label="Cargando">
+      <div className="dash-skel-row">
+        <div className="dash-skel-bar w40" />
+        <div className="dash-skel-bar w22" />
+      </div>
+      <div className="dash-skel-kpis">
+        <div className="dash-skel-card" />
+        <div className="dash-skel-card" />
+        <div className="dash-skel-card" />
+      </div>
+      <div className="dash-skel-card tall" />
     </div>
   );
 }
@@ -122,7 +135,6 @@ export default function UserDashboard() {
   const { user } = useContext(AuthContext);
 
   const [mode, setMode] = useState("all");
-  const cfg = MODE[mode];
 
   const [activities, setActivities] = useState([]);
   const [myEvidences, setMyEvidences] = useState([]);
@@ -131,9 +143,10 @@ export default function UserDashboard() {
   const [loading, setLoading] = useState(true);
   const [alert, setAlert] = useState(null);
 
+  const cfg = MODE[mode];
+
   const userName = useMemo(() => {
-    const nombre =
-      user?.nombre || user?.name || dash?.user?.nombre || dash?.user?.name || "";
+    const nombre = user?.nombre || user?.name || dash?.user?.nombre || dash?.user?.name || "";
     const apellido = user?.apellido || dash?.user?.apellido || "";
     const full = `${nombre} ${apellido}`.trim();
     if (full) return full;
@@ -151,14 +164,16 @@ export default function UserDashboard() {
   }, [myEvidences]);
 
   const loadAll = useCallback(async () => {
+    const activeCfg = MODE[mode];
+
     try {
       setLoading(true);
       setAlert(null);
 
       const [dashRes, actRes, evRes] = await Promise.all([
         getUserDashboard(),
-        cfg.fetchActivities(),
-        cfg.fetchEvidences(),
+        activeCfg.fetchActivities(),
+        activeCfg.fetchEvidences(),
       ]);
 
       setDash(dashRes || null);
@@ -170,7 +185,7 @@ export default function UserDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [cfg]);
+  }, [mode]);
 
   useEffect(() => {
     loadAll();
@@ -214,56 +229,79 @@ export default function UserDashboard() {
 
   const modeLabel = MODE[mode]?.label || "Todas";
 
+  // Panel lateral: prioriza evidencias pendientes
+  const evidencePanelItems = useMemo(() => {
+    if (!cfg.showEvidences) return [];
+    const list = (activities || []).map((a) => {
+      const ev = evidenceByActivity[a._id];
+      const status = ev?.status || "none";
+      const priority =
+        status === "approved" ? 3 :
+        status === "pending" ? 1 :
+        status === "rejected" ? 0 :
+        2; // none
+      return { a, ev, status, priority };
+    });
+
+    return list.sort((x, y) => x.priority - y.priority).slice(0, 6);
+  }, [activities, cfg.showEvidences, evidenceByActivity]);
+
   return (
-    <div className="dashboard-container">
-      <div className="eco-shell">
-        <aside className="eco-sidebar" aria-label="Navegación">
-          <div className="eco-sidebar-head">
-            <span aria-hidden="true">🌿</span>
-            <div className="eco-sidebar-brand">EcoSteps SGSS</div>
+    <div className="dash-page">
+      <div className="dash-shell">
+        {/* SIDEBAR */}
+        <aside className="dash-sidebar" aria-label="Navegación">
+          <div className="dash-sidebar-head">
+            <div className="dash-brand">
+              <span className="dash-brand-icon" aria-hidden="true">🌿</span>
+              <div>
+                <div className="dash-brand-name">EcoSteps</div>
+                <div className="dash-brand-sub">SGSS • Panel estudiante</div>
+              </div>
+            </div>
           </div>
 
-          <nav className="eco-sidebar-nav">
-            <button type="button" className="eco-nav-item is-active" onClick={() => go("/user")}>
-              <span aria-hidden="true">▦</span> Dashboard
+          <nav className="dash-nav">
+            <button type="button" className="dash-nav-item is-active" onClick={() => go("/user")}>
+              Dashboard
             </button>
-
-            <button type="button" className="eco-nav-item" onClick={() => go(ROUTES.report)}>
-              <span aria-hidden="true">⬆</span> Subir reporte
+            <button type="button" className="dash-nav-item" onClick={() => go(ROUTES.report)}>
+              Subir reporte
             </button>
-
-            <button type="button" className="eco-nav-item" onClick={() => go(ROUTES.tickets)}>
-              <span aria-hidden="true">🎫</span> Tickets
+            <button type="button" className="dash-nav-item" onClick={() => go(ROUTES.tickets)}>
+              Tickets
             </button>
-
-            <button type="button" className="eco-nav-item" onClick={() => go(ROUTES.help)}>
-              <span aria-hidden="true">🤖</span> EcoBot
+            <button type="button" className="dash-nav-item" onClick={() => go(ROUTES.help)}>
+              EcoBot
             </button>
           </nav>
 
-          <div className="eco-sidebar-foot">
-            <div className="eco-level-card">
-              <div className="eco-level-label">Perfil</div>
-              <div className="eco-level-name">{userName}</div>
-              <div className="eco-level-sub">Servicio Social Activo</div>
-              <div className="mt-3">
+          <div className="dash-sidebar-foot">
+            <div className="dash-profile">
+              <div className="dash-profile-label">Sesión</div>
+              <div className="dash-profile-name">{userName}</div>
+              <div className="dash-profile-sub">Servicio Social Activo</div>
+
+              <div className="dash-profile-actions">
                 <LogoutButton />
               </div>
             </div>
           </div>
         </aside>
 
-        <main className="eco-main" aria-label="Contenido principal">
-          <div className="eco-main-card">
-            <div className="eco-topbar">
+        {/* MAIN */}
+        <main className="dash-main" aria-label="Contenido principal">
+          <section className="dash-card">
+            {/* Header */}
+            <div className="dash-top">
               <div>
-                <h2 className="eco-greet-title">Hola, {userName}</h2>
-                <p className="eco-greet-sub">Tu panel de Servicio Social</p>
+                <h2 className="dash-title">Hola, {userName}</h2>
+                <p className="dash-subtitle">Tu panel de Servicio Social • orden y seguimiento</p>
               </div>
 
-              <div className="eco-topbar-right">
+              <div className="dash-top-actions">
                 <button
-                  className="btn btn-eco-ghost btn-sm"
+                  className="dash-btn dash-btn-ghost"
                   type="button"
                   onClick={loadAll}
                   disabled={loading}
@@ -272,97 +310,171 @@ export default function UserDashboard() {
                 >
                   {loading ? "Actualizando..." : "Refrescar"}
                 </button>
+
+                <button className="dash-btn dash-btn-primary" type="button" onClick={() => go(ROUTES.report)}>
+                  Subir reporte
+                </button>
               </div>
             </div>
 
-            <div className="mt-2">
+            {/* Progress */}
+            <div className="dash-section">
               <UserProgress />
             </div>
 
-            {kpis && (
-              <div className="eco-kpis">
-                <Kpi title="Reportes" value={kpis.approvedReports} hint="Aprobados / Máximo" />
-                <Kpi title="Evidencias" value={kpis.evidences} hint="Resumen" />
-                <Kpi title="Actividades" value={kpis.activities} hint="Resumen" />
+            {/* Alert */}
+            {alert?.text && (
+              <div className={`dash-alert ${alert.type === "success" ? "is-success" : "is-danger"}`} role="alert">
+                {alert.text}
               </div>
             )}
 
-            <div className="mt-2 card-soft p-2">
-              <div className="eco-actions" role="toolbar" aria-label="Acciones del dashboard">
-                <div className="eco-actions-left">
-                  <div className="eco-segment" role="group" aria-label="Filtro de actividades">
-                    {Object.entries(MODE).map(([key, value]) => (
-                      <button
-                        key={key}
-                        type="button"
-                        className={`eco-segment-btn ${mode === key ? "is-active" : ""}`}
-                        onClick={() => setMode(key)}
-                        disabled={loading}
-                      >
-                        {value.label}
-                      </button>
-                    ))}
+            {/* Loading */}
+            {loading ? (
+              <Skeleton />
+            ) : (
+              <>
+                {/* KPIs */}
+                {kpis && (
+                  <div className="dash-kpis">
+                    <KpiCard title="Reportes" value={kpis.approvedReports} hint="Aprobados / Máximo" />
+                    <KpiCard title="Evidencias" value={kpis.evidences} hint="Resumen" />
+                    <KpiCard title="Actividades" value={kpis.activities} hint="Resumen" />
+                  </div>
+                )}
+
+                {/* Toolbar */}
+                <div className="dash-toolbar" role="toolbar" aria-label="Acciones del dashboard">
+                  <div className="dash-toolbar-left">
+                    <div className="dash-segment" role="group" aria-label="Filtro de actividades">
+                      {Object.entries(MODE).map(([key, value]) => (
+                        <button
+                          key={key}
+                          type="button"
+                          className={`dash-segment-btn ${mode === key ? "is-active" : ""}`}
+                          onClick={() => setMode(key)}
+                        >
+                          {value.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="dash-hint" aria-label="Ayuda del filtro">
+                      {cfg.helperText}
+                    </div>
                   </div>
                 </div>
 
-                <div className="eco-actions-right">
-                  <button
-                    className="btn btn-success btn-sm"
-                    type="button"
-                    onClick={() => go(ROUTES.report)}
-                  >
-                    Subir reporte
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {alert?.text && (
-              <div className={`alert alert-${alert.type} py-2 mt-3 mb-0`}>{alert.text}</div>
-            )}
-
-            {loading ? (
-              <div className="py-4 text-center text-muted">Cargando...</div>
-            ) : (
-              <>
-                <div className="mt-3">
-                  {activities.length === 0 ? (
-                    <EmptyState
-                      modeLabel={modeLabel}
-                      onRefresh={loadAll}
-                      onSwitchMode={() => setMode((m) => (m === "all" ? "mine" : "all"))}
-                    />
-                  ) : (
-                    <ActivityList activities={activities} onJoin={onJoin} onLeave={onLeave} />
-                  )}
-                </div>
-
-                {cfg.showEvidences && activities.length > 0 && (
-                  <div className="mt-4">
-                    <div className="d-flex align-items-end justify-content-between flex-wrap gap-2">
+                {/* Content grid */}
+                <div className="dash-grid">
+                  {/* Left: activities */}
+                  <section className="dash-panel">
+                    <div className="dash-panel-head">
                       <div>
-                        <h5 className="mb-1">Evidencias</h5>
-                        <p className="text-muted small mb-0">
-                          Sube evidencia solo si no está aprobada.
-                        </p>
+                        <div className="dash-panel-title">Actividades</div>
+                        <div className="dash-panel-sub">Selecciona y gestiona tu participación</div>
                       </div>
                     </div>
 
-                    <div className="d-grid gap-2 mt-3">
-                      {activities.map((a) => (
-                        <EvidenceRow
-                          key={a._id}
-                          title={a.titulo}
-                          evidence={evidenceByActivity[a._id]}
-                          onUpload={() => go(ROUTES.evidence(a._id))}
+                    <div className="dash-panel-body">
+                      {activities.length === 0 ? (
+                        <EmptyState
+                          modeLabel={modeLabel}
+                          onRefresh={loadAll}
+                          onSwitchMode={() => setMode((m) => (m === "all" ? "mine" : "all"))}
                         />
-                      ))}
+                      ) : (
+                        <ActivityList activities={activities} onJoin={onJoin} onLeave={onLeave} />
+                      )}
                     </div>
-                  </div>
+                  </section>
+
+                  {/* Right: side panel */}
+                  <aside className="dash-panel dash-panel-side" aria-label="Panel lateral">
+                    <div className="dash-panel-head">
+                      <div>
+                        <div className="dash-panel-title">Accesos rápidos</div>
+                        <div className="dash-panel-sub">Lo más usado, en un clic</div>
+                      </div>
+                    </div>
+
+                    <div className="dash-panel-body">
+                      <div className="dash-quick">
+                        <button className="dash-quick-btn" type="button" onClick={() => go(ROUTES.report)}>
+                          ⬆ Subir reporte
+                        </button>
+                        <button className="dash-quick-btn" type="button" onClick={() => go(ROUTES.tickets)}>
+                          🎫 Ver tickets
+                        </button>
+                        <button className="dash-quick-btn" type="button" onClick={() => go(ROUTES.help)}>
+                          🤖 Abrir EcoBot
+                        </button>
+                      </div>
+
+                      <div className="dash-divider" />
+
+                      <div className="dash-note">
+                        <div className="dash-note-title">Recomendación</div>
+                        <div className="dash-note-text">
+                          Mantén evidencias al día. Si una evidencia está <strong>pendiente</strong>, revisa comentarios
+                          y vuelve a subir si es necesario.
+                        </div>
+                      </div>
+
+                      {cfg.showEvidences && activities.length > 0 && (
+                        <>
+                          <div className="dash-divider" />
+
+                          <div className="dash-panel-minihead">
+                            <div className="dash-panel-mini-title">Evidencias (prioridad)</div>
+                            <div className="dash-panel-mini-sub">Pendientes / sin evidencia primero</div>
+                          </div>
+
+                          <div className="dash-mini-list">
+                            {evidencePanelItems.map(({ a, ev }) => (
+                              <EvidenceRow
+                                key={a._id}
+                                title={a.titulo}
+                                evidence={ev}
+                                onUpload={() => go(ROUTES.evidence(a._id))}
+                              />
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </aside>
+                </div>
+
+                {/* Full evidences list (solo en "Mis actividades") */}
+                {cfg.showEvidences && activities.length > 0 && (
+                  <section className="dash-section">
+                    <div className="dash-panel">
+                      <div className="dash-panel-head">
+                        <div>
+                          <div className="dash-panel-title">Evidencias</div>
+                          <div className="dash-panel-sub">
+                            Sube evidencia solo si no está aprobada.
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="dash-panel-body dash-stack">
+                        {activities.map((a) => (
+                          <EvidenceRow
+                            key={a._id}
+                            title={a.titulo}
+                            evidence={evidenceByActivity[a._id]}
+                            onUpload={() => go(ROUTES.evidence(a._id))}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </section>
                 )}
               </>
             )}
-          </div>
+          </section>
         </main>
       </div>
     </div>

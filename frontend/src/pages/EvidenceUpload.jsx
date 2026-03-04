@@ -1,103 +1,64 @@
-// ==============================
-// EvidenceUpload.jsx
-// User: Subida de evidencia por actividad
-// - Validación: tipo + tamaño (JPG/PNG/WEBP, max 6MB)
-// - Preview con URL.createObjectURL + cleanup (evita memory leaks)
-// - Upload multipart al backend (activityId + caption + file)
-// ==============================
-
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-// ==============================
-// Services (API)
-// ==============================
 import { uploadEvidence } from "../services/evidenceService";
-
-// ==============================
-// Styles
-// ==============================
-import "../styles/dashboard.css";
-
-// ==============================
-// Config
-// ==============================
+import "../styles/evidenceupload.css";
 
 const MAX_MB = 6;
 const MAX_BYTES = MAX_MB * 1024 * 1024;
-
-// ✅ Alineado con lo que ya validas
 const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp"]);
 
-// ==============================
-// Small Utils
-// ==============================
-
-function formatKB(bytes) {
-  // UI rápida: KB redondeado
-  return `${Math.round(bytes / 1024)} KB`;
+function formatBytes(bytes) {
+  if (!bytes && bytes !== 0) return "";
+  const kb = bytes / 1024;
+  if (kb < 1024) return `${Math.round(kb)} KB`;
+  const mb = kb / 1024;
+  return `${mb.toFixed(2)} MB`;
 }
 
-function EvidenceUpload() {
-  // ==============================
-  // Router / Params
-  // ==============================
+function extHint(mime) {
+  if (mime === "image/jpeg") return "JPG";
+  if (mime === "image/png") return "PNG";
+  if (mime === "image/webp") return "WEBP";
+  return mime || "";
+}
+
+export default function EvidenceUpload() {
   const { activityId } = useParams();
   const navigate = useNavigate();
 
-  // ==============================
-  // State: form
-  // ==============================
+  const fileRef = useRef(null);
+
   const [caption, setCaption] = useState("");
   const [file, setFile] = useState(null);
 
-  // ==============================
-  // State: UI
-  // ==============================
-  const [alert, setAlert] = useState(null); // { type: "success"|"danger"|"info", text }
+  const [alert, setAlert] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
 
-  // ==============================
-  // Preview (memoized)
-  // - Crea URL temporal para mostrar imagen
-  // ==============================
   const previewUrl = useMemo(() => {
     if (!file) return null;
     return URL.createObjectURL(file);
   }, [file]);
 
-  // Cleanup: revoca la URL cuando cambia o se desmonta el componente
   useEffect(() => {
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
     };
   }, [previewUrl]);
 
-  // ==============================
-  // DOM helpers (manteniendo tu enfoque actual)
-  // ==============================
   const resetFileInput = () => {
-    const el = document.getElementById("evidenceFileInput");
-    if (el) el.value = "";
+    if (fileRef.current) fileRef.current.value = "";
   };
 
-  // ==============================
-  // Validations
-  // ==============================
   const validateFile = (f) => {
     if (!f) return "Selecciona una imagen.";
-    if (!ALLOWED.has(f.type)) return "Solo se permiten imágenes (jpg, png, webp).";
+    if (!ALLOWED.has(f.type)) return "Solo se permiten imágenes (JPG, PNG, WEBP).";
     if (f.size > MAX_BYTES) return `Máximo ${MAX_MB}MB.`;
     return null;
   };
 
-  // ==============================
-  // Handlers
-  // ==============================
-  const handleFileChange = (e) => {
-    const f = e.target.files?.[0] || null;
-    if (!f) return;
-
+  const setFileSafe = (f) => {
     const err = validateFile(f);
     if (err) {
       setAlert({ type: "danger", text: `❌ ${err}` });
@@ -105,15 +66,48 @@ function EvidenceUpload() {
       resetFileInput();
       return;
     }
-
     setAlert(null);
     setFile(f);
+  };
+
+  const handleFileChange = (e) => {
+    const f = e.target.files?.[0] || null;
+    if (!f) return;
+    setFileSafe(f);
+  };
+
+  const onDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+    if (uploading) return;
+
+    const f = e.dataTransfer?.files?.[0] || null;
+    if (!f) return;
+    setFileSafe(f);
+  };
+
+  const onDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!uploading) setDragOver(true);
+  };
+
+  const onDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+  };
+
+  const clearFile = () => {
+    setFile(null);
+    setAlert(null);
+    resetFileInput();
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Revalida antes de subir (seguridad)
     const err = validateFile(file);
     if (err) {
       setAlert({ type: "danger", text: `❌ ${err}` });
@@ -135,149 +129,177 @@ function EvidenceUpload() {
         text: `✅ ${res?.message || "Evidencia subida"} (pendiente de revisión)`,
       });
 
-      // Reset de form
       setCaption("");
       setFile(null);
       resetFileInput();
 
-      // UX: delay para que el usuario vea el success
       setTimeout(() => navigate("/user"), 900);
     } catch (err2) {
-      setAlert({ type: "danger", text: `❌ ${err2?.message || "Error al subir evidencia"}` });
+      setAlert({
+        type: "danger",
+        text: `❌ ${err2?.message || "Error al subir evidencia"}`,
+      });
     } finally {
       setUploading(false);
+      setDragOver(false);
     }
   };
 
-  // ==============================
-  // Render
-  // ==============================
   return (
-    <div className="dashboard-container">
-      <div className="dashboard-card">
-        {/* =========================
-            Header
-           ========================= */}
-        <div className="dashboard-header">
-          <div>
-            <h1 className="dashboard-title mb-0">Subir evidencia</h1>
-            <div className="text-muted small">
-              Formatos: <strong>JPG/PNG/WEBP</strong> · Máximo <strong>{MAX_MB}MB</strong>
-            </div>
-          </div>
-
-          <button
-            className="btn btn-outline-secondary"
-            type="button"
-            onClick={() => navigate("/user")}
-            disabled={uploading}
-          >
-            Volver
-          </button>
-        </div>
-
-        {/* =========================
-            Alert (feedback)
-           ========================= */}
-        {alert?.text && <div className={`alert alert-${alert.type} py-2`}>{alert.text}</div>}
-
-        {/* =========================
-            Form
-           ========================= */}
-        <form onSubmit={handleSubmit} className="row g-3">
-          {/* File */}
-          <div className="col-12">
-            <label className="input-label">Imagen *</label>
-
-            <input
-              id="evidenceFileInput"
-              type="file"
-              accept="image/*"
-              className="form-control"
-              onChange={handleFileChange}
-              disabled={uploading}
-            />
-
-            {file && (
-              <div className="small text-muted mt-1">
-                📎 <strong>{file.name}</strong> · {formatKB(file.size)}
-              </div>
-            )}
-          </div>
-
-          {/* Preview */}
-          {previewUrl && (
-            <div className="col-12">
-              <div className="input-label">Vista previa</div>
-
-              <div className="card-soft p-2">
-                <img
-                  src={previewUrl}
-                  alt="preview"
-                  className="img-fluid"
-                  style={{
-                    width: "100%",
-                    maxHeight: "360px",
-                    objectFit: "cover",
-                    borderRadius: "12px",
-                    border: "1px solid rgba(0,0,0,0.06)",
-                  }}
-                />
+    <div className="dash-page">
+      {/* ✅ IMPORTANTE: modo single (sin sidebar) */}
+      <div className="dash-shell dash-shell--single">
+        <main className="dash-main" aria-label="Subir evidencia">
+          <section className="dash-card dash-card--narrow">
+            <div className="dash-top">
+              <div>
+                <h2 className="dash-title">Subir evidencia</h2>
+                <p className="dash-subtitle">
+                  Formatos: <strong>JPG/PNG/WEBP</strong> · Máximo{" "}
+                  <strong>{MAX_MB}MB</strong>
+                </p>
               </div>
 
-              <div className="d-flex gap-2 mt-2 flex-wrap">
+              <div className="dash-top-actions">
                 <button
+                  className="dash-btn dash-btn-ghost"
                   type="button"
-                  className="btn btn-outline-secondary btn-sm"
-                  onClick={() => {
-                    setFile(null);
-                    resetFileInput();
-                    setAlert(null);
-                  }}
+                  onClick={() => navigate("/user")}
                   disabled={uploading}
                 >
-                  Quitar imagen
+                  Volver
                 </button>
               </div>
             </div>
-          )}
 
-          {/* Caption */}
-          <div className="col-12">
-            <label className="input-label">Descripción (opcional)</label>
+            {alert?.text && (
+              <div
+                className={`dash-alert ${
+                  alert.type === "success"
+                    ? "is-success"
+                    : alert.type === "danger"
+                    ? "is-danger"
+                    : ""
+                }`}
+                role="alert"
+              >
+                {alert.text}
+              </div>
+            )}
 
-            <textarea
-              className="eco-textarea w-100"
-              value={caption}
-              onChange={(e) => setCaption(e.target.value)}
-              placeholder="Ej. Foto del voluntariado en la actividad…"
-              disabled={uploading}
-            />
+            <form className="dash-upload" onSubmit={handleSubmit} noValidate>
+              <div className="dash-upload-block">
+                <div className="dash-upload-label">Imagen *</div>
 
-            <div className="small text-muted mt-1">
-              Tip: escribe qué hiciste y dónde, para que el admin apruebe rápido.
-            </div>
-          </div>
+                <div
+                  className={`dash-drop ${dragOver ? "is-over" : ""} ${
+                    file ? "has-file" : ""
+                  }`}
+                  onDrop={onDrop}
+                  onDragOver={onDragOver}
+                  onDragLeave={onDragLeave}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ")
+                      fileRef.current?.click();
+                  }}
+                  aria-label="Zona para arrastrar y soltar imagen"
+                >
+                  <div className="dash-drop-icon" aria-hidden="true">
+                    ⬆️
+                  </div>
 
-          {/* Actions */}
-          <div className="col-12 d-flex gap-2 flex-wrap">
-            <button className="btn-eco-solid" type="submit" disabled={uploading || !file}>
-              {uploading ? "Subiendo..." : "Subir evidencia"}
-            </button>
+                  <div className="dash-drop-main">
+                    <div className="dash-drop-title">
+                      Arrastra tu imagen aquí o <span>selecciona un archivo</span>
+                    </div>
+                    <div className="dash-drop-sub">
+                      {file
+                        ? `Seleccionado: ${file.name} • ${formatBytes(
+                            file.size
+                          )} • ${extHint(file.type)}`
+                        : `Máx. ${MAX_MB}MB · JPG/PNG/WEBP`}
+                    </div>
+                  </div>
 
-            <button
-              className="btn btn-outline-secondary"
-              type="button"
-              onClick={() => navigate("/user")}
-              disabled={uploading}
-            >
-              Cancelar
-            </button>
-          </div>
-        </form>
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handleFileChange}
+                    disabled={uploading}
+                    className="dash-file"
+                  />
+                </div>
+
+                {file && (
+                  <div className="dash-upload-meta">
+                    <span className="dash-pill dash-pill-ok">
+                      Lista para subir
+                    </span>
+                    <button
+                      type="button"
+                      className="dash-btn dash-btn-ghost"
+                      onClick={clearFile}
+                      disabled={uploading}
+                    >
+                      Quitar imagen
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {previewUrl && (
+                <div className="dash-upload-block">
+                  <div className="dash-upload-label">Vista previa</div>
+                  <div className="dash-preview">
+                    <img
+                      className="dash-preview-img"
+                      src={previewUrl}
+                      alt="Vista previa de evidencia"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="dash-upload-block">
+                <div className="dash-upload-label">Descripción (opcional)</div>
+                <textarea
+                  className="dash-textarea"
+                  value={caption}
+                  onChange={(e) => setCaption(e.target.value)}
+                  placeholder="Ej. Foto del voluntariado… (qué hiciste, dónde, fecha)"
+                  disabled={uploading}
+                />
+                <div className="dash-help">
+                  Tip: agrega <strong>qué hiciste</strong> y <strong>dónde</strong>{" "}
+                  para que el admin apruebe más rápido.
+                </div>
+              </div>
+
+              <div className="dash-upload-actions">
+                <button
+                  className="dash-btn dash-btn-primary"
+                  type="submit"
+                  disabled={uploading || !file}
+                >
+                  {uploading ? "Subiendo..." : "Subir evidencia"}
+                </button>
+
+                <button
+                  className="dash-btn dash-btn-ghost"
+                  type="button"
+                  onClick={() => navigate("/user")}
+                  disabled={uploading}
+                >
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </section>
+        </main>
       </div>
     </div>
   );
 }
-
-export default EvidenceUpload;
