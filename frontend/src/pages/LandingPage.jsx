@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import "../styles/landing.css";
 
-
 const NAV_ITEMS = [
   { id: "modulos", label: "Módulos" },
   { id: "roles", label: "Roles" },
@@ -17,7 +16,6 @@ export default function LandingPage() {
   const [activeId, setActiveId] = useState("top");
 
   const year = useMemo(() => new Date().getFullYear(), []);
-
   const observerRef = useRef(null);
 
   useEffect(() => {
@@ -27,12 +25,9 @@ export default function LandingPage() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Scroll spy (sección activa)
   useEffect(() => {
     const ids = ["top", ...NAV_ITEMS.map((x) => x.id)];
-    const els = ids
-      .map((id) => document.getElementById(id))
-      .filter(Boolean);
+    const els = ids.map((id) => document.getElementById(id)).filter(Boolean);
 
     if (!els.length) return;
 
@@ -40,10 +35,10 @@ export default function LandingPage() {
 
     const obs = new IntersectionObserver(
       (entries) => {
-        // prioriza la entrada con mayor intersección
         const visible = entries
           .filter((e) => e.isIntersecting)
           .sort((a, b) => (b.intersectionRatio ?? 0) - (a.intersectionRatio ?? 0));
+
         if (visible[0]?.target?.id) setActiveId(visible[0].target.id);
       },
       {
@@ -59,7 +54,6 @@ export default function LandingPage() {
     return () => obs.disconnect();
   }, []);
 
-  // Cierra el menú al cambiar tamaño (desktop)
   useEffect(() => {
     const onResize = () => {
       if (window.innerWidth > 980) setMenuOpen(false);
@@ -78,7 +72,6 @@ export default function LandingPage() {
 
   return (
     <div className="eco-landing">
-      {/* ======= Topbar ======= */}
       <header className={`eco-topbar ${compact ? "is-compact" : ""}`}>
         <div className="eco-container eco-topbar-inner">
           <Link to="/" className="eco-brand" aria-label="Ir a inicio">
@@ -108,6 +101,7 @@ export default function LandingPage() {
             <Link className="eco-btn eco-btn-ghost" to="/login">
               Iniciar sesión
             </Link>
+
             <Link className="eco-btn eco-btn-solid" to="/register">
               Crear cuenta
             </Link>
@@ -126,7 +120,6 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Mobile drawer */}
         <div className={`eco-drawer ${menuOpen ? "is-open" : ""}`}>
           <div className="eco-container eco-drawer-inner">
             <div className="eco-drawer-links">
@@ -141,6 +134,7 @@ export default function LandingPage() {
                 </a>
               ))}
             </div>
+
             <div className="eco-drawer-cta">
               <Link className="eco-btn eco-btn-ghost" to="/login" onClick={() => setMenuOpen(false)}>
                 Iniciar sesión
@@ -153,7 +147,6 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* ======= Hero ======= */}
       <section className="eco-hero" id="top">
         <div className="eco-container eco-hero-grid">
           <div className="eco-hero-left eco-anim">
@@ -163,20 +156,26 @@ export default function LandingPage() {
             </div>
 
             <h1 className="eco-h1">
-              Todo tu <span className="eco-gradient-text">Servicio Social</span> en un solo lugar:
-              evidencias, reportes y seguimiento real.
+              Gestiona tu <span className="eco-gradient-text">Servicio Social</span> con orden,
+              seguimiento y trazabilidad real.
             </h1>
 
             <p className="eco-lead">
-              EcoSteps SGSS te ayuda a llevar el proceso **con orden y trazabilidad**.
-              Menos confusión, menos “¿dónde va esto?”, más claridad para estudiantes y administradores.
+              EcoSteps SGSS centraliza actividades, evidencias, reportes y soporte en una sola
+              plataforma. <strong>Menos confusión, más control y mejor seguimiento</strong> para
+              estudiantes y administradores.
             </p>
 
             <div className="eco-hero-cta">
               <Link className="eco-btn eco-btn-solid eco-btn-lg" to="/register">
                 Empezar ahora
               </Link>
-              <a className="eco-btn eco-btn-ghost eco-btn-lg" href="#como-funciona" onClick={onNavClick("como-funciona")}>
+
+              <a
+                className="eco-btn eco-btn-ghost eco-btn-lg"
+                href="#como-funciona"
+                onClick={onNavClick("como-funciona")}
+              >
                 Ver cómo funciona
               </a>
             </div>
@@ -184,15 +183,17 @@ export default function LandingPage() {
             <div className="eco-proof">
               <div className="eco-proof-item">
                 <div className="eco-proof-kpi">Actividades</div>
-                <div className="eco-proof-desc">Publicadas y controladas</div>
+                <div className="eco-proof-desc">Organizadas, visibles y controladas</div>
               </div>
+
               <div className="eco-proof-item">
                 <div className="eco-proof-kpi">Evidencias</div>
-                <div className="eco-proof-desc">Con estatus y comentarios</div>
+                <div className="eco-proof-desc">Con estatus, revisión y comentarios</div>
               </div>
+
               <div className="eco-proof-item">
                 <div className="eco-proof-kpi">Soporte</div>
-                <div className="eco-proof-desc">EcoBot + Tickets</div>
+                <div className="eco-proof-desc">Tickets y asistencia guiada con EcoBot</div>
               </div>
             </div>
 
@@ -211,33 +212,35 @@ export default function LandingPage() {
               <div className="eco-preview-top">
                 <div>
                   <div className="eco-preview-title">Panel de progreso</div>
-                  <div className="eco-preview-sub">Ejemplo de visualización</div>
+                  <div className="eco-preview-sub">Vista general del flujo del sistema</div>
                 </div>
-                <span className="eco-chip eco-chip-ok">Al día</span>
+                <span className="eco-chip eco-chip-ok">En control</span>
               </div>
 
               <div className="eco-preview-kpis">
-                <PreviewKpi label="Reportes" value="0/3" hint="bimestrales" />
-                <PreviewKpi label="Evidencias" value="0" hint="pendientes" />
-                <PreviewKpi label="Horas" value="0/480" hint="acumuladas" />
+                <PreviewKpi label="Reportes" value="1/3" hint="bimestrales" />
+                <PreviewKpi label="Evidencias" value="2" hint="pendientes" />
+                <PreviewKpi label="Horas" value="160/480" hint="acumuladas" />
               </div>
 
               <div className="eco-progress">
                 <div className="eco-progress-head">
-                  <span>Progreso</span>
+                  <span>Progreso general</span>
                   <span className="eco-muted">Bimestre 1 · 2 · 3</span>
                 </div>
+
                 <div className="eco-progress-track" aria-hidden="true">
-                  <div className="eco-progress-bar" style={{ width: "22%" }} />
+                  <div className="eco-progress-bar" style={{ width: "35%" }} />
                 </div>
+
                 <div className="eco-progress-foot eco-muted">
-                  Cada reporte aprobado equivale a 160h
+                  Cada reporte aprobado equivale a 160 horas registradas.
                 </div>
               </div>
 
               <div className="eco-preview-list">
                 <MiniRow
-                  title="Evidencia: Actividad comunitaria"
+                  title="Evidencia: Jornada comunitaria"
                   chips={[
                     { text: "Documento", tone: "muted" },
                     { text: "Aprobada", tone: "ok" },
@@ -247,12 +250,15 @@ export default function LandingPage() {
                   title="Ticket: Duda sobre reporte"
                   chips={[{ text: "En proceso", tone: "warn" }]}
                 />
+
                 <div className="eco-empty">
                   <div className="eco-empty-ic" aria-hidden="true">
                     🌿
                   </div>
-                  <div className="eco-empty-title">Todo claro</div>
-                  <div className="eco-empty-text">Seguimiento simple y verificable.</div>
+                  <div className="eco-empty-title">Proceso claro</div>
+                  <div className="eco-empty-text">
+                    Todo queda organizado, visible y fácil de consultar.
+                  </div>
                 </div>
               </div>
             </div>
@@ -262,13 +268,14 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ======= Módulos ======= */}
       <section id="modulos" className="eco-section">
         <div className="eco-container">
           <div className="eco-section-head">
-            <h2 className="eco-h2">Módulos principales</h2>
+            <span className="eco-section-kicker">MÓDULOS</span>
+            <h2 className="eco-h2">Todo lo necesario en una sola plataforma</h2>
             <p className="eco-sub">
-              Un sistema completo para administrar el servicio social sin perder evidencias, reportes o trazabilidad.
+              EcoSteps integra los componentes clave del servicio social para que el proceso deje de
+              depender de mensajes dispersos, entregas informales o seguimiento manual.
             </p>
           </div>
 
@@ -276,44 +283,45 @@ export default function LandingPage() {
             <Feature
               icon="📌"
               title="Actividades"
-              desc="Explora actividades disponibles, requisitos y cupo. Inscripción clara y controlada."
+              desc="Consulta actividades disponibles, requisitos, cupo y estado de participación."
             />
             <Feature
               icon="📎"
               title="Evidencias"
-              desc="Sube evidencias por actividad, con estatus (aprobada/pendiente/rechazada) y feedback."
+              desc="Sube archivos por actividad, revisa estatus y recibe comentarios de validación."
             />
             <Feature
               icon="🧾"
               title="Reportes"
-              desc="Entrega bimestral centralizada con verificación. Menos correos, más orden."
+              desc="Entrega reportes bimestrales desde un flujo centralizado y ordenado."
             />
             <Feature
               icon="📈"
               title="Progreso"
-              desc="Visualiza horas, reportes y avances por etapas para saber exactamente qué falta."
+              desc="Visualiza horas acumuladas, avances y lo pendiente por completar."
             />
             <Feature
               icon="🎫"
               title="Tickets"
-              desc="Soporte con trazabilidad: abre un ticket, sigue el estado y conserva historial."
+              desc="Canal formal de soporte con historial, seguimiento y estados visibles."
             />
             <Feature
               icon="🤖"
               title="EcoBot"
-              desc="Asistente que guía pasos frecuentes (qué subir, dónde, y cómo resolver dudas)."
+              desc="Asistente que ayuda a resolver dudas frecuentes y orienta al usuario."
             />
           </div>
         </div>
       </section>
 
-      {/* ======= Roles ======= */}
       <section id="roles" className="eco-section eco-section-alt">
         <div className="eco-container">
           <div className="eco-section-head">
-            <h2 className="eco-h2">Roles</h2>
+            <span className="eco-section-kicker">ROLES</span>
+            <h2 className="eco-h2">Experiencias diferenciadas para cada necesidad</h2>
             <p className="eco-sub">
-              Dos experiencias claras: estudiantes para ejecutar y admins para validar y acompañar.
+              El sistema está diseñado para que estudiantes y administradores trabajen sobre el mismo
+              flujo, pero con responsabilidades claras y vistas específicas.
             </p>
           </div>
 
@@ -321,26 +329,27 @@ export default function LandingPage() {
             <Role
               tone="ok"
               title="Prestador (Estudiante)"
-              subtitle="Gestiona y entrega con orden"
+              subtitle="Gestiona entregas y seguimiento con claridad"
               bullets={[
                 "Explora actividades e inscríbete",
-                "Sube evidencias y revisa estatus",
+                "Sube evidencias y revisa su estatus",
                 "Entrega reportes bimestrales",
-                "Recibe comentarios y seguimiento",
-                "Solicita soporte con EcoBot o Tickets",
+                "Consulta observaciones y avances",
+                "Solicita apoyo mediante EcoBot o Tickets",
               ]}
               ctaText="Entrar como estudiante"
               ctaTo="/login"
             />
+
             <Role
               tone="warn"
               title="Administrador"
               subtitle="Valida, acompaña y da trazabilidad"
               bullets={[
                 "Revisa evidencias y reportes",
-                "Aprueba / rechaza con comentarios",
-                "Gestiona tickets y seguimiento",
-                "Organiza actividades y cupos",
+                "Aprueba o rechaza con comentarios",
+                "Gestiona tickets de soporte",
+                "Administra actividades y cupos",
                 "Consulta indicadores de avance",
               ]}
               ctaText="Entrar como admin"
@@ -350,58 +359,65 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ======= Cómo funciona ======= */}
       <section id="como-funciona" className="eco-section">
         <div className="eco-container">
           <div className="eco-section-head">
-            <h2 className="eco-h2">Cómo funciona</h2>
-            <p className="eco-sub">Un flujo simple para que el proceso sea claro desde el día 1.</p>
+            <span className="eco-section-kicker">FLUJO</span>
+            <h2 className="eco-h2">Cómo funciona EcoSteps</h2>
+            <p className="eco-sub">
+              Un proceso simple, estructurado y entendible desde el registro hasta el cierre del
+              servicio social.
+            </p>
           </div>
 
           <div className="eco-steps">
-            <Step n="1" title="Crea tu cuenta" desc="Regístrate y entra al sistema con tu rol." />
-            <Step n="2" title="Participa en actividades" desc="Inscríbete, completa actividades y registra evidencias." />
-            <Step n="3" title="Sube evidencias y reportes" desc="Carga documentos y revisa estatus con comentarios." />
-            <Step n="4" title="Cierra con trazabilidad" desc="Horas y reportes organizados: todo queda registrado." />
+            <Step n="1" title="Crea tu cuenta" desc="Regístrate e ingresa al sistema con tu rol correspondiente." />
+            <Step n="2" title="Participa en actividades" desc="Inscríbete, colabora y registra tu participación." />
+            <Step n="3" title="Sube evidencias y reportes" desc="Entrega documentación y revisa observaciones." />
+            <Step n="4" title="Da seguimiento al avance" desc="Consulta horas, estado de aprobación y soporte." />
           </div>
 
           <div className="eco-callout">
-            <div className="eco-callout-title">Diseñado para evitar el caos</div>
+            <div className="eco-callout-title">Menos desorden, más control</div>
             <p className="eco-callout-text">
-              Centraliza entregas y validaciones. Menos WhatsApp, menos correos, más claridad.
+              EcoSteps centraliza la operación diaria del servicio social para reducir errores,
+              duplicidad y falta de seguimiento.
             </p>
           </div>
         </div>
       </section>
 
-      {/* ======= Beneficios ======= */}
       <section id="beneficios" className="eco-section eco-section-alt">
         <div className="eco-container">
           <div className="eco-section-head">
-            <h2 className="eco-h2">Beneficios</h2>
-            <p className="eco-sub">Lo que hace que EcoSteps se sienta “profesional” y útil en la práctica.</p>
+            <span className="eco-section-kicker">VALOR</span>
+            <h2 className="eco-h2">Beneficios principales</h2>
+            <p className="eco-sub">
+              Diseñado para ofrecer una experiencia más profesional, consistente y confiable en la
+              gestión del servicio social.
+            </p>
           </div>
 
           <div className="eco-grid eco-grid-4">
-            <Benefit title="Estandarización" desc="Formatos claros para evidencias y reportes. Sin dudas." />
-            <Benefit title="Orden real" desc="Todo centralizado con estatus, historial y trazabilidad." />
-            <Benefit title="Transparencia" desc="Comentarios y decisiones visibles: menos confusión." />
-            <Benefit title="Acompañamiento" desc="Soporte guiado para avanzar sin atorarte." />
+            <Benefit title="Estandarización" desc="Formatos y pasos claros para reducir dudas y errores." />
+            <Benefit title="Orden real" desc="Todo centralizado con historial, estatus y seguimiento." />
+            <Benefit title="Transparencia" desc="Decisiones visibles con comentarios y trazabilidad." />
+            <Benefit title="Acompañamiento" desc="Soporte guiado para resolver bloqueos rápidamente." />
           </div>
 
           <div className="eco-testimonials">
             <Testimonial
-              quote="Ahora sé exactamente qué subir y en qué etapa voy. Ya no ando adivinando."
+              quote="Ahora sé exactamente qué debo subir y en qué etapa voy. Todo es mucho más claro."
               name="Estudiante"
               role="Prestador"
             />
             <Testimonial
-              quote="Validar evidencias es más rápido y queda registro. Eso era lo que faltaba."
+              quote="La validación es más ordenada y queda registro de cada revisión. Eso mejora bastante la operación."
               name="Administrador"
               role="Coordinación"
             />
             <Testimonial
-              quote="El flujo de tickets + bot reduce dudas repetidas y mejora el seguimiento."
+              quote="El flujo de tickets y ayuda guiada reduce dudas repetidas y facilita el seguimiento."
               name="Soporte"
               role="Operación"
             />
@@ -409,34 +425,39 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ======= FAQ ======= */}
       <section id="faq" className="eco-section">
         <div className="eco-container">
           <div className="eco-section-head">
+            <span className="eco-section-kicker">FAQ</span>
             <h2 className="eco-h2">Preguntas frecuentes</h2>
-            <p className="eco-sub">Respuestas cortas, claras y sin humo.</p>
+            <p className="eco-sub">Respuestas directas para entender el sistema rápidamente.</p>
           </div>
 
           <div className="eco-faq">
             <Faq
               q="¿EcoSteps reemplaza todo lo que ya hago?"
-              a="Centraliza y ordena: actividades, evidencias, reportes y soporte. Reduce fricción y mejora trazabilidad."
+              a="Centraliza actividades, evidencias, reportes y soporte. Reduce fricción y mejora la trazabilidad del proceso."
             />
             <Faq
               q="¿Cómo se valida una evidencia o reporte?"
-              a="El administrador revisa, aprueba o rechaza con comentarios. El estudiante ve el estatus en su panel."
+              a="El administrador revisa la entrega, la aprueba o rechaza y agrega comentarios. El estudiante puede ver el estatus desde su panel."
             />
             <Faq
-              q="¿Qué pasa si tengo un problema?"
-              a="Puedes usar EcoBot para dudas comunes o abrir un ticket para seguimiento formal (estado e historial)."
+              q="¿Qué pasa si tengo un problema o duda?"
+              a="Puedes usar EcoBot para dudas frecuentes o abrir un ticket para seguimiento formal con historial y estado."
             />
           </div>
 
           <div className="eco-final-cta">
             <div>
-              <div className="eco-final-cta-title">Listo para empezar tu Servicio Social con orden</div>
-              <div className="eco-final-cta-sub">Crea tu cuenta y prueba el flujo en minutos.</div>
+              <div className="eco-final-cta-title">
+                Empieza tu Servicio Social con una plataforma más clara y profesional
+              </div>
+              <div className="eco-final-cta-sub">
+                Regístrate y conoce el flujo completo en minutos.
+              </div>
             </div>
+
             <div className="eco-final-cta-actions">
               <Link className="eco-btn eco-btn-solid eco-btn-lg" to="/register">
                 Crear cuenta
@@ -449,23 +470,31 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ======= Footer ======= */}
       <footer className="eco-footer">
         <div className="eco-container eco-footer-inner">
           <div className="eco-footer-left">
             <div className="eco-footer-brand">
-              <span className="eco-footer-mark" aria-hidden="true">🌿</span>
+              <span className="eco-footer-mark" aria-hidden="true">
+                🌿
+              </span>
               EcoSteps SGSS
             </div>
+
             <div className="eco-footer-sub">
-              Plataforma para gestionar Servicio Social con seguimiento, evidencias y soporte.
+              Plataforma para gestionar servicio social con seguimiento, evidencias, reportes y soporte.
             </div>
+
             <div className="eco-footer-copy">© {year} EcoSteps</div>
           </div>
 
           <div className="eco-footer-right">
             {NAV_ITEMS.map((item) => (
-              <a key={item.id} className="eco-footer-link" href={`#${item.id}`} onClick={onNavClick(item.id)}>
+              <a
+                key={item.id}
+                className="eco-footer-link"
+                href={`#${item.id}`}
+                onClick={onNavClick(item.id)}
+              >
                 {item.label}
               </a>
             ))}
@@ -480,7 +509,7 @@ export default function LandingPage() {
   );
 }
 
-/* ========== UI Components ========== */
+/* UI Components */
 
 function Feature({ icon, title, desc }) {
   return (
@@ -502,6 +531,7 @@ function Role({ title, subtitle, bullets, ctaText, ctaTo, tone }) {
           <div className="eco-role-title">{title}</div>
           <div className="eco-role-sub">{subtitle}</div>
         </div>
+
         <span className={`eco-chip ${tone === "warn" ? "eco-chip-warn" : "eco-chip-ok"}`}>
           {tone === "warn" ? "Gestión" : "Estudiante"}
         </span>
@@ -510,7 +540,9 @@ function Role({ title, subtitle, bullets, ctaText, ctaTo, tone }) {
       <ul className="eco-role-list">
         {bullets.map((b, i) => (
           <li key={i} className="eco-role-item">
-            <span className="eco-check" aria-hidden="true">✓</span>
+            <span className="eco-check" aria-hidden="true">
+              ✓
+            </span>
             <span>{b}</span>
           </li>
         ))}
@@ -560,6 +592,7 @@ function Testimonial({ quote, name, role }) {
 
 function Faq({ q, a }) {
   const [open, setOpen] = useState(false);
+
   return (
     <button
       type="button"
@@ -598,7 +631,11 @@ function MiniRow({ title, chips }) {
             <span
               key={i}
               className={`eco-chip ${
-                c.tone === "ok" ? "eco-chip-ok" : c.tone === "warn" ? "eco-chip-warn" : "eco-chip-muted"
+                c.tone === "ok"
+                  ? "eco-chip-ok"
+                  : c.tone === "warn"
+                  ? "eco-chip-warn"
+                  : "eco-chip-muted"
               }`}
             >
               {c.text}
@@ -606,6 +643,7 @@ function MiniRow({ title, chips }) {
           ))}
         </div>
       </div>
+
       <span className="eco-minirow-cta eco-muted" aria-hidden="true">
         Ver →
       </span>
