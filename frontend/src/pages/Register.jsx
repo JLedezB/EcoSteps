@@ -9,6 +9,8 @@ import {
   HiOutlineEye,
   HiOutlineEyeOff,
   HiOutlineShieldCheck,
+  HiOutlineCheckCircle,
+  HiOutlineXCircle,
 } from "react-icons/hi";
 
 import { Link, useNavigate } from "react-router-dom";
@@ -20,6 +22,8 @@ import * as Yup from "yup";
 import { requestRegisterCode } from "../services/authService";
 
 // ✅ Policy (igual que backend)
+// Nota: el backend puede limitar a 72; aquí lo mantenemos en regex,
+// pero en UI ya NO mostramos "72", solo "mínimo 8".
 const STRONG_PWD_REGEX =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s])(?!.*\s).{8,72}$/;
 
@@ -38,6 +42,17 @@ const RegisterSchema = Yup.object().shape({
     .matches(/^[0-9()+\-\s]*$/, "Teléfono inválido")
     .required("El teléfono es obligatorio"),
 });
+
+function ReqPill({ ok, children }) {
+  return (
+    <span className={`pwd-pill ${ok ? "is-ok" : "is-bad"}`}>
+      <span className="pwd-pill-ic" aria-hidden="true">
+        {ok ? <HiOutlineCheckCircle /> : <HiOutlineXCircle />}
+      </span>
+      <span className="pwd-pill-tx">{children}</span>
+    </span>
+  );
+}
 
 function Register() {
   const navigate = useNavigate();
@@ -140,7 +155,7 @@ function Register() {
 
               const pwd = values.password || "";
               const checks = {
-                len: pwd.length >= 8 && pwd.length <= 72,
+                len: pwd.length >= 8, // ✅ ya no mostramos 72 en UI
                 lower: /[a-z]/.test(pwd),
                 upper: /[A-Z]/.test(pwd),
                 num: /[0-9]/.test(pwd),
@@ -148,6 +163,13 @@ function Register() {
                 nospace: !/\s/.test(pwd),
               };
               const allOk = Object.values(checks).every(Boolean);
+
+              // score simple para “barra”
+              const score = Object.values(checks).filter(Boolean).length; // 0..6
+              const pct = Math.round((score / 6) * 100);
+
+              const meterLabel =
+                pct >= 100 ? "Fuerte" : pct >= 67 ? "Buena" : pct >= 34 ? "Regular" : "Débil";
 
               return (
                 <Form className="auth-form" noValidate>
@@ -256,17 +278,33 @@ function Register() {
 
                     <ErrorMessage name="password" component="div" className="auth-error" />
 
-                    <div className="auth-footer-note" style={{ marginTop: 8 }}>
-                      <small>
-                        Requisitos: <b>{allOk ? "✅ contraseña segura" : "⚠️ falta completar"}</b>
-                        <br />
-                        • {checks.len ? "✅" : "❌"} 8–72 caracteres{" "}
-                        • {checks.upper ? "✅" : "❌"} mayúscula{" "}
-                        • {checks.lower ? "✅" : "❌"} minúscula{" "}
-                        • {checks.num ? "✅" : "❌"} número{" "}
-                        • {checks.special ? "✅" : "❌"} especial{" "}
-                        • {checks.nospace ? "✅" : "❌"} sin espacios
-                      </small>
+                    {/* ✅ Bloque profesional: barra + chips */}
+                    <div className="pwd-box" aria-live="polite">
+                      <div className="pwd-top">
+                        <div className="pwd-title">
+                          Requisitos <span className={`pwd-state ${allOk ? "ok" : "warn"}`}>{allOk ? "Cumplidos" : "Pendientes"}</span>
+                        </div>
+
+                        <div className="pwd-meter" title={`${pct}%`}>
+                          <span className="pwd-meter-bar" style={{ width: `${pct}%` }} />
+                        </div>
+
+                        <div className="pwd-meter-meta">
+                          <span className={`pwd-badge ${allOk ? "ok" : pct >= 34 ? "mid" : "low"}`}>
+                            {meterLabel}
+                          </span>
+                          <span className="pwd-pct">{pct}%</span>
+                        </div>
+                      </div>
+
+                      <div className="pwd-reqs">
+                        <ReqPill ok={checks.len}>Mínimo 8 caracteres</ReqPill>
+                        <ReqPill ok={checks.upper}>Mayúscula</ReqPill>
+                        <ReqPill ok={checks.lower}>Minúscula</ReqPill>
+                        <ReqPill ok={checks.num}>Número</ReqPill>
+                        <ReqPill ok={checks.special}>Especial</ReqPill>
+                        <ReqPill ok={checks.nospace}>Sin espacios</ReqPill>
+                      </div>
                     </div>
                   </div>
 

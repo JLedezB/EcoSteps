@@ -259,7 +259,7 @@ function Login() {
                     )}
                   </button>
 
-                  {/* Divider */}
+                  {/* Divider (PRO) */}
                   <div className="auth-divider" role="separator" aria-label="o continuar con Google">
                     <span>o</span>
                   </div>

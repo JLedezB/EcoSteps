@@ -1,17 +1,36 @@
 // ==============================
 // AdminDashboard.jsx
-// Panel administrador: métricas + CRUD de actividades + navegación a módulos
-// ✅ Reemplaza window.confirm por modal personalizado (sin "localhost dice")
-// ✅ Fecha: formateo estable (UTC) + valor input estable
+// Panel administrador PRO
+// - Tipografía y estructura más profesional
+// - Sidebar moderno con íconos reales (sin emoji)
+// - Métricas + CRUD + navegación
+// - ConfirmModal para eliminar
+// - Fecha estable en UTC
 // ==============================
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  HiOutlineSquares2X2,
+  HiOutlineDocumentText,
+  HiOutlineTicket,
+  HiOutlineChartBar,
+  HiOutlinePlusCircle,
+  HiOutlineClipboardDocumentList,
+  HiOutlineMapPin,
+  HiOutlineCalendarDays,
+  HiOutlineUsers,
+  HiOutlinePencilSquare,
+  HiOutlineTrash,
+  HiOutlineArrowPath,
+} from "react-icons/hi2";
+import { FaLeaf } from "react-icons/fa";
+
 import LogoutButton from "../components/LogoutButton";
 import ConfirmModal from "../components/ConfirmModal";
 
 // ==============================
-// Services (API)
+// Services
 // ==============================
 import {
   getActivities,
@@ -22,7 +41,7 @@ import {
 import { getAdminDashboard } from "../services/dashboardService";
 
 // ==============================
-// Charts (Recharts)
+// Charts
 // ==============================
 import {
   ResponsiveContainer,
@@ -41,7 +60,7 @@ import {
 // ==============================
 // Styles
 // ==============================
-import "../styles/dashboard.css";
+import "../styles/admindashboard.css";
 
 // ==============================
 // Constants
@@ -60,7 +79,7 @@ const STATUS_CHIP = {
   cerrada: "eco-chip eco-chip-muted",
 };
 
-const CHART_COLORS = ["#2ecc71", "#f59e0b", "#3b82f6", "#ef4444", "#8b5cf6"];
+const CHART_COLORS = ["#1f8f5f", "#f59e0b", "#2563eb", "#ef4444", "#7c3aed"];
 
 // ==============================
 // Utils
@@ -69,8 +88,6 @@ function fmtDate(d) {
   if (!d) return "—";
   const dt = new Date(d);
   if (Number.isNaN(dt.getTime())) return "—";
-
-  // ✅ Fuerza UTC para evitar desfase de día por timezone
   return dt.toLocaleDateString("es-MX", { timeZone: "UTC" });
 }
 
@@ -78,7 +95,6 @@ function toDateInputValueUTC(d) {
   if (!d) return "";
   const dt = new Date(d);
   if (Number.isNaN(dt.getTime())) return "";
-  // YYYY-MM-DD en UTC (estable)
   return dt.toISOString().slice(0, 10);
 }
 
@@ -86,7 +102,7 @@ function sumValues(data) {
   return (data || []).reduce((acc, d) => acc + (Number(d?.value) || 0), 0);
 }
 
-function shorten(str, max = 12) {
+function shorten(str, max = 14) {
   if (!str) return "";
   const s = String(str);
   return s.length > max ? `${s.slice(0, max)}…` : s;
@@ -98,14 +114,15 @@ function shorten(str, max = 12) {
 function EmptyChart({ title = "Sin datos" }) {
   return (
     <div className="eco-chart-empty">
-      <div className="fw-semibold">{title}</div>
-      <div className="text-muted small">Aún no hay registros suficientes.</div>
+      <div className="eco-chart-empty-title">{title}</div>
+      <div className="eco-chart-empty-sub">Aún no hay registros suficientes.</div>
     </div>
   );
 }
 
 function ChartTooltip({ active, payload, label }) {
   if (!active || !payload || payload.length === 0) return null;
+
   const p0 = payload[0];
   const name = p0?.name ?? label ?? "—";
   const value = p0?.value ?? 0;
@@ -132,46 +149,72 @@ function DonutCenter({ total, subtitle = "Total" }) {
 }
 
 // ==============================
-// UI blocks
+// Reusable UI
 // ==============================
 function PanelCard({ title, subtitle, actions, children }) {
   return (
-    <div className="card-soft p-3">
-      {(title || actions) && (
-        <div className="d-flex justify-content-between align-items-start gap-2 flex-wrap mb-2">
+    <section className="eco-panel">
+      {(title || subtitle || actions) && (
+        <div className="eco-panel-head">
           <div>
-            {title ? <div className="fw-semibold">{title}</div> : null}
-            {subtitle ? <div className="text-muted small">{subtitle}</div> : null}
+            {title ? <h3 className="eco-panel-title">{title}</h3> : null}
+            {subtitle ? <p className="eco-panel-subtitle">{subtitle}</p> : null}
           </div>
-          {actions ? <div className="d-flex gap-2 flex-wrap">{actions}</div> : null}
+          {actions ? <div className="eco-panel-actions">{actions}</div> : null}
         </div>
       )}
-      {children}
-    </div>
+      <div>{children}</div>
+    </section>
   );
 }
 
 function Kpi({ title, value, hint, action }) {
   return (
-    <div className="eco-kpi">
+    <article className="eco-kpi">
       <div className="eco-kpi-title">{title}</div>
       <div className="eco-kpi-value">{value}</div>
-      <div className="d-flex justify-content-between align-items-end gap-2">
-        {hint ? <div className="eco-kpi-hint">{hint}</div> : <div />}
+      <div className="eco-kpi-bottom">
+        <div className="eco-kpi-hint">{hint || "—"}</div>
         {action ? <div>{action}</div> : null}
       </div>
+    </article>
+  );
+}
+
+function SectionHeader({ eyebrow, title, subtitle, actions }) {
+  return (
+    <div className="eco-section-head">
+      <div>
+        {eyebrow ? <div className="eco-section-eyebrow">{eyebrow}</div> : null}
+        <h2 className="eco-section-title">{title}</h2>
+        {subtitle ? <p className="eco-section-subtitle">{subtitle}</p> : null}
+      </div>
+
+      {actions ? <div className="eco-section-actions">{actions}</div> : null}
     </div>
   );
 }
 
-function SectionHeader({ title, subtitle, actions }) {
+function SidebarItem({ icon, label, onClick, active = false }) {
   return (
-    <div className="d-flex justify-content-between align-items-end flex-wrap gap-2 mb-2">
-      <div>
-        <h5 className="mb-1">{title}</h5>
-        {subtitle ? <p className="text-muted small mb-0">{subtitle}</p> : null}
-      </div>
-      {actions ? <div className="d-flex gap-2 flex-wrap">{actions}</div> : null}
+    <button
+      type="button"
+      className={`eco-nav-item ${active ? "is-active" : ""}`}
+      onClick={onClick}
+    >
+      <span className="eco-nav-icon" aria-hidden="true">
+        {icon}
+      </span>
+      <span>{label}</span>
+    </button>
+  );
+}
+
+function StatMini({ label, value }) {
+  return (
+    <div className="eco-mini-stat">
+      <span className="eco-mini-stat-label">{label}</span>
+      <span className="eco-mini-stat-value">{value}</span>
     </div>
   );
 }
@@ -179,30 +222,26 @@ function SectionHeader({ title, subtitle, actions }) {
 export default function AdminDashboard() {
   const navigate = useNavigate();
 
-  // Refs para "scroll to section"
+  const overviewRef = useRef(null);
   const chartsRef = useRef(null);
   const formRef = useRef(null);
   const listRef = useRef(null);
 
-  // Data
   const [stats, setStats] = useState(null);
   const [activities, setActivities] = useState([]);
 
-  // UI state
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [alert, setAlert] = useState(null);
 
-  // CRUD form
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
 
-  // ✅ Modal confirm delete
   const [showConfirm, setShowConfirm] = useState(false);
   const [activityToDelete, setActivityToDelete] = useState(null);
 
   // ==============================
-  // Navigation (misma funcionalidad)
+  // Navigation
   // ==============================
   const goTickets = useCallback(() => navigate("/admin/tickets"), [navigate]);
   const goReviewReports = useCallback(() => navigate("/admin/reports"), [navigate]);
@@ -211,18 +250,25 @@ export default function AdminDashboard() {
     [navigate]
   );
 
+  const scrollTo = (ref) => ref?.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+
   // ==============================
-  // Load data
+  // Load
   // ==============================
   const load = useCallback(async () => {
     try {
       setLoading(true);
       setAlert(null);
+
       const [actRes, dashRes] = await Promise.all([getActivities(), getAdminDashboard()]);
+
       setActivities(actRes?.activities || []);
       setStats(dashRes || null);
     } catch (err) {
-      setAlert({ type: "danger", text: err?.message || "Error al cargar admin dashboard" });
+      setAlert({
+        type: "danger",
+        text: err?.message || "Error al cargar el panel administrador.",
+      });
     } finally {
       setLoading(false);
     }
@@ -233,23 +279,24 @@ export default function AdminDashboard() {
   }, [load]);
 
   // ==============================
-  // CRUD helpers
+  // Form logic
   // ==============================
-  const onChange = (key, value) => setForm((p) => ({ ...p, [key]: value }));
+  const onChange = (key, value) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  };
 
   const startEdit = (a) => {
     setEditingId(a._id);
     setForm({
       titulo: a.titulo || "",
       descripcion: a.descripcion || "",
-      // ✅ Valor input date estable
       fecha: a.fecha ? toDateInputValueUTC(a.fecha) : "",
       lugar: a.lugar || "",
       cupoTotal: a.cupoTotal || 1,
       estado: a.estado || "activa",
     });
     setAlert(null);
-    queueMicrotask(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    queueMicrotask(() => scrollTo(formRef));
   };
 
   const cancelEdit = () => {
@@ -264,14 +311,17 @@ export default function AdminDashboard() {
     const payload = {
       titulo: form.titulo?.trim(),
       descripcion: form.descripcion?.trim(),
-      fecha: form.fecha, // "YYYY-MM-DD"
+      fecha: form.fecha,
       lugar: form.lugar?.trim(),
       cupoTotal: Number(form.cupoTotal),
       estado: form.estado,
     };
 
     if (!payload.titulo || !payload.descripcion || !payload.fecha || !payload.cupoTotal) {
-      setAlert({ type: "danger", text: "Completa título, descripción, fecha y cupo total." });
+      setAlert({
+        type: "danger",
+        text: "Completa título, descripción, fecha y cupo total.",
+      });
       return;
     }
 
@@ -281,39 +331,40 @@ export default function AdminDashboard() {
 
       if (editingId) {
         const res = await updateActivity(editingId, payload);
-        setAlert({ type: "success", text: res?.message || "Actividad actualizada" });
+        setAlert({ type: "success", text: res?.message || "Actividad actualizada correctamente." });
       } else {
         const res = await createActivity(payload);
-        setAlert({ type: "success", text: res?.message || "Actividad creada" });
+        setAlert({ type: "success", text: res?.message || "Actividad creada correctamente." });
       }
 
       cancelEdit();
       await load();
-      queueMicrotask(() => listRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+      queueMicrotask(() => scrollTo(listRef));
     } catch (err) {
-      setAlert({ type: "danger", text: err?.message || "Error al guardar actividad" });
+      setAlert({
+        type: "danger",
+        text: err?.message || "Error al guardar la actividad.",
+      });
     } finally {
       setSaving(false);
     }
   };
 
-  // ✅ Abre modal (sin confirm nativo)
   const remove = (id) => {
     setActivityToDelete(id);
     setShowConfirm(true);
   };
 
-  // ✅ Confirmar eliminación
   const confirmDelete = async () => {
     if (!activityToDelete) return;
 
     try {
       setAlert(null);
       const res = await deleteActivity(activityToDelete);
-      setAlert({ type: "success", text: res?.message || "Actividad eliminada" });
+      setAlert({ type: "success", text: res?.message || "Actividad eliminada correctamente." });
       await load();
     } catch (err) {
-      setAlert({ type: "danger", text: err?.message || "Error al eliminar" });
+      setAlert({ type: "danger", text: err?.message || "Error al eliminar la actividad." });
     } finally {
       setShowConfirm(false);
       setActivityToDelete(null);
@@ -321,23 +372,23 @@ export default function AdminDashboard() {
   };
 
   // ==============================
-  // Charts data
+  // Chart data
   // ==============================
   const ticketsPieData = useMemo(() => {
     if (!stats) return [];
     return [
-      { name: "Open", value: stats.openTickets ?? 0 },
-      { name: "In progress", value: stats.inProgressTickets ?? 0 },
-      { name: "Resolved", value: stats.resolvedTickets ?? 0 },
+      { name: "Abiertos", value: stats.openTickets ?? 0 },
+      { name: "En progreso", value: stats.inProgressTickets ?? 0 },
+      { name: "Resueltos", value: stats.resolvedTickets ?? 0 },
     ];
   }, [stats]);
 
   const evidencesPieData = useMemo(() => {
     if (!stats) return [];
     return [
-      { name: "Pending", value: stats.pendingEvidences ?? 0 },
-      { name: "Approved", value: stats.approvedEvidences ?? 0 },
-      { name: "Rejected", value: stats.rejectedEvidences ?? 0 },
+      { name: "Pendientes", value: stats.pendingEvidences ?? 0 },
+      { name: "Aprobadas", value: stats.approvedEvidences ?? 0 },
+      { name: "Rechazadas", value: stats.rejectedEvidences ?? 0 },
     ];
   }, [stats]);
 
@@ -365,6 +416,7 @@ export default function AdminDashboard() {
   // ==============================
   const kpis = useMemo(() => {
     if (!stats) return [];
+
     return [
       {
         title: "Evidencias pendientes",
@@ -374,7 +426,7 @@ export default function AdminDashboard() {
           <button
             className="btn btn-outline-success btn-sm"
             type="button"
-            onClick={() => chartsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+            onClick={() => scrollTo(chartsRef)}
           >
             Ver
           </button>
@@ -403,277 +455,306 @@ export default function AdminDashboard() {
       {
         title: "Usuarios registrados",
         value: stats.totalUsers ?? 0,
-        hint: "Rol user",
+        hint: "Rol usuario",
       },
     ];
   }, [goReviewReports, goTickets, stats]);
-
-  // ==============================
-  // Sidebar actions
-  // ==============================
-  const scrollTo = (ref) => ref?.current?.scrollIntoView({ behavior: "smooth", block: "start" });
 
   return (
     <div className="dashboard-container">
       <div className="eco-shell">
         {/* =========================
-            Sidebar (Admin)
+            Sidebar
         ========================= */}
-        <aside className="eco-sidebar" aria-label="Navegación admin">
+        <aside className="eco-sidebar" aria-label="Navegación administrador">
           <div className="eco-sidebar-head">
-            <span aria-hidden="true">🛡️</span>
-            <div className="eco-sidebar-brand">EcoSteps SGSS</div>
+            <div className="eco-brand-mark">
+              <FaLeaf />
+            </div>
+
+            <div className="eco-brand-copy">
+              <div className="eco-sidebar-brand">EcoSteps SGSS</div>
+              <div className="eco-sidebar-brand-sub">Administración</div>
+            </div>
           </div>
 
           <nav className="eco-sidebar-nav">
-            <button type="button" className="eco-nav-item is-active" onClick={() => navigate("/admin")}>
-              <span aria-hidden="true">▦</span> Dashboard
-            </button>
+            <SidebarItem
+              icon={<HiOutlineSquares2X2 />}
+              label="Dashboard"
+              active
+              onClick={() => navigate("/admin")}
+            />
 
-            <button type="button" className="eco-nav-item" onClick={goReviewReports}>
-              <span aria-hidden="true">📄</span> Reportes
-            </button>
+            <SidebarItem
+              icon={<HiOutlineDocumentText />}
+              label="Reportes"
+              onClick={goReviewReports}
+            />
 
-            <button type="button" className="eco-nav-item" onClick={goTickets}>
-              <span aria-hidden="true">🎫</span> Tickets
-            </button>
+            <SidebarItem icon={<HiOutlineTicket />} label="Tickets" onClick={goTickets} />
 
-            <button type="button" className="eco-nav-item" onClick={() => scrollTo(chartsRef)}>
-              <span aria-hidden="true">📊</span> Métricas
-            </button>
+            <SidebarItem
+              icon={<HiOutlineChartBar />}
+              label="Métricas"
+              onClick={() => scrollTo(chartsRef)}
+            />
 
-            <button type="button" className="eco-nav-item" onClick={() => scrollTo(formRef)}>
-              <span aria-hidden="true">➕</span> Crear actividad
-            </button>
+            <SidebarItem
+              icon={<HiOutlinePlusCircle />}
+              label="Crear actividad"
+              onClick={() => scrollTo(formRef)}
+            />
 
-            <button type="button" className="eco-nav-item" onClick={() => scrollTo(listRef)}>
-              <span aria-hidden="true">🗂️</span> Actividades
-            </button>
+            <SidebarItem
+              icon={<HiOutlineClipboardDocumentList />}
+              label="Actividades"
+              onClick={() => scrollTo(listRef)}
+            />
           </nav>
 
           <div className="eco-sidebar-foot">
-            <div className="eco-level-card">
-              <div className="eco-level-label">Perfil</div>
-              <div className="eco-level-name">ADMIN</div>
-              <div className="eco-level-sub">Gestión y revisión</div>
+            <div className="eco-profile-card">
+              <div className="eco-profile-top">
+                <div className="eco-profile-badge">ADMIN</div>
+              </div>
+
+              <div className="eco-profile-role">Gestión y revisión</div>
+              <div className="eco-profile-copy">
+                Supervisa actividades, reportes, tickets y métricas del sistema.
+              </div>
+
+              <div className="eco-profile-stats">
+                <StatMini label="Usuarios" value={stats?.totalUsers ?? 0} />
+                <StatMini label="Tickets" value={stats?.openTickets ?? 0} />
+              </div>
             </div>
 
-            <div className="mt-3">
+            <div className="eco-logout-wrap">
               <LogoutButton />
             </div>
           </div>
         </aside>
 
         {/* =========================
-            Main content
+            Main
         ========================= */}
-        <main className="eco-main" aria-label="Contenido admin">
+        <main className="eco-main" aria-label="Contenido principal administrador">
           <div className="eco-main-card">
-            {/* Topbar */}
-            <div className="eco-topbar">
-              <div>
-                <h2 className="eco-greet-title mb-0">Panel administrador</h2>
-                <p className="eco-greet-sub mb-0">Control general: métricas, reportes, tickets y actividades.</p>
+            {/* Hero / Top header */}
+            <section ref={overviewRef} className="eco-hero">
+              <div className="eco-hero-copy">
+                <div className="eco-hero-eyebrow">Panel de control</div>
+                <h1 className="eco-hero-title">Administración general</h1>
+                <p className="eco-hero-subtitle">
+                  Visualiza métricas, revisa módulos y administra actividades desde un solo lugar.
+                </p>
               </div>
 
-              <div className="eco-topbar-right d-flex gap-2 flex-wrap">
-                <button className="btn btn-outline-success btn-sm" type="button" onClick={goReviewReports}>
+              <div className="eco-hero-actions">
+                <button className="btn btn-success btn-sm" type="button" onClick={goReviewReports}>
                   Revisar reportes
                 </button>
+
                 <button className="btn btn-outline-success btn-sm" type="button" onClick={goTickets}>
                   Ver tickets
                 </button>
+
                 <button
                   className="btn btn-eco-ghost btn-sm"
                   type="button"
                   onClick={load}
                   disabled={loading || saving}
                 >
+                  <HiOutlineArrowPath style={{ marginRight: 6 }} />
                   {loading ? "Cargando..." : "Refrescar"}
                 </button>
               </div>
-            </div>
+            </section>
 
-            {/* Alert */}
-            {alert?.text && <div className={`alert alert-${alert.type} py-2`}>{alert.text}</div>}
+            {alert?.text ? <div className={`alert alert-${alert.type} eco-alert`}>{alert.text}</div> : null}
 
             {/* KPIs */}
-            {stats ? (
-              <div className="eco-kpis mb-3" style={{ gridTemplateColumns: "repeat(4, minmax(0, 1fr))" }}>
-                {kpis.map((k) => (
+            <section className="eco-overview-grid">
+              {stats ? (
+                kpis.map((k) => (
                   <Kpi key={k.title} title={k.title} value={k.value} hint={k.hint} action={k.action} />
-                ))}
-              </div>
-            ) : (
-              <div className="mb-3">{loading ? <div className="text-muted">Cargando métricas...</div> : null}</div>
-            )}
+                ))
+              ) : (
+                <div className="eco-loading-box">
+                  {loading ? "Cargando métricas..." : "No fue posible cargar la información."}
+                </div>
+              )}
+            </section>
 
             {/* =========================
-                Charts section
+                Metrics section
             ========================= */}
-            <div ref={chartsRef} className="mb-4">
+            <section ref={chartsRef} className="eco-block">
               <SectionHeader
-                title="Métricas"
-                subtitle="Distribuciones y ranking (se actualiza con Refrescar)."
+                eyebrow="Analítica"
+                title="Métricas del sistema"
+                subtitle="Distribuciones y ranking actual. Actualiza manualmente con el botón de refrescar."
                 actions={
-                  <button className="btn btn-outline-secondary btn-sm" type="button" onClick={() => scrollTo(formRef)}>
+                  <button
+                    className="btn btn-outline-secondary btn-sm"
+                    type="button"
+                    onClick={() => scrollTo(formRef)}
+                  >
                     Crear actividad
                   </button>
                 }
               />
 
               {stats ? (
-                <div className="row g-3">
-                  <div className="col-md-6">
-                    <PanelCard title="Tickets por estado" subtitle="Distribución actual">
-                      <div style={{ width: "100%", height: 280 }}>
-                        {ticketsTotal === 0 ? (
-                          <EmptyChart title="Sin tickets" />
-                        ) : (
-                          <ResponsiveContainer>
-                            <PieChart>
-                              <Pie
-                                data={ticketsPieData}
-                                dataKey="value"
-                                nameKey="name"
-                                innerRadius={62}
-                                outerRadius={92}
-                                paddingAngle={3}
-                                isAnimationActive
-                                labelLine={false}
-                                label={({ name, percent, value }) =>
-                                  value > 0 ? `${name} ${(percent * 100).toFixed(0)}%` : ""
-                                }
-                              >
-                                {ticketsPieData.map((_, idx) => (
-                                  <Cell key={idx} fill={CHART_COLORS[idx % CHART_COLORS.length]} />
-                                ))}
-                                <DonutCenter total={ticketsTotal} subtitle="Tickets" />
-                              </Pie>
+                <div className="eco-grid-2">
+                  <PanelCard title="Tickets por estado" subtitle="Distribución actual">
+                    <div className="eco-chart-box">
+                      {ticketsTotal === 0 ? (
+                        <EmptyChart title="Sin tickets registrados" />
+                      ) : (
+                        <ResponsiveContainer>
+                          <PieChart>
+                            <Pie
+                              data={ticketsPieData}
+                              dataKey="value"
+                              nameKey="name"
+                              innerRadius={64}
+                              outerRadius={94}
+                              paddingAngle={3}
+                              labelLine={false}
+                              label={({ name, percent, value }) =>
+                                value > 0 ? `${name} ${(percent * 100).toFixed(0)}%` : ""
+                              }
+                            >
+                              {ticketsPieData.map((_, idx) => (
+                                <Cell key={idx} fill={CHART_COLORS[idx % CHART_COLORS.length]} />
+                              ))}
+                              <DonutCenter total={ticketsTotal} subtitle="Tickets" />
+                            </Pie>
+                            <Tooltip content={<ChartTooltip />} />
+                            <Legend verticalAlign="bottom" height={24} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      )}
+                    </div>
+                  </PanelCard>
 
-                              <Tooltip content={<ChartTooltip />} />
-                              <Legend verticalAlign="bottom" height={24} />
-                            </PieChart>
-                          </ResponsiveContainer>
-                        )}
-                      </div>
-                    </PanelCard>
-                  </div>
+                  <PanelCard title="Evidencias por estado" subtitle="Pendientes, aprobadas y rechazadas">
+                    <div className="eco-chart-box">
+                      {evidencesTotal === 0 ? (
+                        <EmptyChart title="Sin evidencias registradas" />
+                      ) : (
+                        <ResponsiveContainer>
+                          <PieChart>
+                            <Pie
+                              data={evidencesPieData}
+                              dataKey="value"
+                              nameKey="name"
+                              innerRadius={64}
+                              outerRadius={94}
+                              paddingAngle={3}
+                              labelLine={false}
+                              label={({ name, percent, value }) =>
+                                value > 0 ? `${name} ${(percent * 100).toFixed(0)}%` : ""
+                              }
+                            >
+                              {evidencesPieData.map((_, idx) => (
+                                <Cell key={idx} fill={CHART_COLORS[idx % CHART_COLORS.length]} />
+                              ))}
+                              <DonutCenter total={evidencesTotal} subtitle="Evidencias" />
+                            </Pie>
+                            <Tooltip content={<ChartTooltip />} />
+                            <Legend verticalAlign="bottom" height={24} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      )}
+                    </div>
+                  </PanelCard>
 
-                  <div className="col-md-6">
-                    <PanelCard title="Evidencias por estado" subtitle="Pendientes / aprobadas / rechazadas">
-                      <div style={{ width: "100%", height: 280 }}>
-                        {evidencesTotal === 0 ? (
-                          <EmptyChart title="Sin evidencias" />
-                        ) : (
-                          <ResponsiveContainer>
-                            <PieChart>
-                              <Pie
-                                data={evidencesPieData}
-                                dataKey="value"
-                                nameKey="name"
-                                innerRadius={62}
-                                outerRadius={92}
-                                paddingAngle={3}
-                                isAnimationActive
-                                labelLine={false}
-                                label={({ name, percent, value }) =>
-                                  value > 0 ? `${name} ${(percent * 100).toFixed(0)}%` : ""
-                                }
-                              >
-                                {evidencesPieData.map((_, idx) => (
-                                  <Cell key={idx} fill={CHART_COLORS[idx % CHART_COLORS.length]} />
-                                ))}
-                                <DonutCenter total={evidencesTotal} subtitle="Evidencias" />
-                              </Pie>
+                  <PanelCard title="Top actividades" subtitle="Participación por actividad">
+                    <div className="eco-chart-box eco-chart-box-tall">
+                      {topActivitiesBar.length === 0 ? (
+                        <EmptyChart title="Sin actividades con participación" />
+                      ) : (
+                        <ResponsiveContainer>
+                          <BarChart
+                            data={topActivitiesBar}
+                            margin={{ top: 8, right: 10, left: 0, bottom: 6 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" opacity={0.28} />
+                            <XAxis
+                              dataKey="titulo"
+                              tickFormatter={(v) => shorten(v, 14)}
+                              interval={0}
+                              tick={{ fontSize: 12 }}
+                            />
+                            <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                            <Tooltip content={<ChartTooltip />} />
+                            <Legend verticalAlign="bottom" height={24} />
+                            <Bar
+                              dataKey="participantes"
+                              name="Participantes"
+                              radius={[10, 10, 0, 0]}
+                              barSize={30}
+                              fill={CHART_COLORS[2]}
+                            />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      )}
+                    </div>
+                  </PanelCard>
 
-                              <Tooltip content={<ChartTooltip />} />
-                              <Legend verticalAlign="bottom" height={24} />
-                            </PieChart>
-                          </ResponsiveContainer>
-                        )}
-                      </div>
-                    </PanelCard>
-                  </div>
-
-                  <div className="col-md-6">
-                    <PanelCard title="Top actividades" subtitle="Participación">
-                      <div style={{ width: "100%", height: 300 }}>
-                        {topActivitiesBar.length === 0 ? (
-                          <EmptyChart title="Sin actividades con participación" />
-                        ) : (
-                          <ResponsiveContainer>
-                            <BarChart data={topActivitiesBar} margin={{ top: 8, right: 10, left: 0, bottom: 6 }}>
-                              <CartesianGrid strokeDasharray="3 3" opacity={0.35} />
-                              <XAxis
-                                dataKey="titulo"
-                                tickFormatter={(v) => shorten(v, 12)}
-                                interval={0}
-                                tick={{ fontSize: 12 }}
-                              />
-                              <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
-                              <Tooltip content={<ChartTooltip />} />
-                              <Legend verticalAlign="bottom" height={24} />
-                              <Bar
-                                dataKey="participantes"
-                                name="Participantes"
-                                radius={[8, 8, 0, 0]}
-                                barSize={28}
-                                fill={CHART_COLORS[2]}
-                              />
-                            </BarChart>
-                          </ResponsiveContainer>
-                        )}
-                      </div>
-                    </PanelCard>
-                  </div>
-
-                  <div className="col-md-6">
-                    <PanelCard title="Usuarios más activos" subtitle="Evidencias enviadas">
-                      <div style={{ width: "100%", height: 300 }}>
-                        {usersActiveBar.length === 0 ? (
-                          <EmptyChart title="Sin usuarios activos" />
-                        ) : (
-                          <ResponsiveContainer>
-                            <BarChart data={usersActiveBar} margin={{ top: 8, right: 10, left: 0, bottom: 6 }}>
-                              <CartesianGrid strokeDasharray="3 3" opacity={0.35} />
-                              <XAxis
-                                dataKey="nombre"
-                                tickFormatter={(v) => shorten(v, 12)}
-                                interval={0}
-                                tick={{ fontSize: 12 }}
-                              />
-                              <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
-                              <Tooltip content={<ChartTooltip />} />
-                              <Legend verticalAlign="bottom" height={24} />
-                              <Bar
-                                dataKey="evidencias"
-                                name="Evidencias"
-                                radius={[8, 8, 0, 0]}
-                                barSize={28}
-                                fill={CHART_COLORS[0]}
-                              />
-                            </BarChart>
-                          </ResponsiveContainer>
-                        )}
-                      </div>
-                    </PanelCard>
-                  </div>
+                  <PanelCard title="Usuarios más activos" subtitle="Cantidad de evidencias enviadas">
+                    <div className="eco-chart-box eco-chart-box-tall">
+                      {usersActiveBar.length === 0 ? (
+                        <EmptyChart title="Sin usuarios activos" />
+                      ) : (
+                        <ResponsiveContainer>
+                          <BarChart
+                            data={usersActiveBar}
+                            margin={{ top: 8, right: 10, left: 0, bottom: 6 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" opacity={0.28} />
+                            <XAxis
+                              dataKey="nombre"
+                              tickFormatter={(v) => shorten(v, 14)}
+                              interval={0}
+                              tick={{ fontSize: 12 }}
+                            />
+                            <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                            <Tooltip content={<ChartTooltip />} />
+                            <Legend verticalAlign="bottom" height={24} />
+                            <Bar
+                              dataKey="evidencias"
+                              name="Evidencias"
+                              radius={[10, 10, 0, 0]}
+                              barSize={30}
+                              fill={CHART_COLORS[0]}
+                            />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      )}
+                    </div>
+                  </PanelCard>
                 </div>
               ) : (
-                <PanelCard title="Métricas" subtitle="Cargando...">
-                  <div className="text-muted">{loading ? "Cargando métricas..." : "Sin datos"}</div>
+                <PanelCard title="Métricas" subtitle="Cargando información del sistema">
+                  <div className="eco-loading-box">
+                    {loading ? "Cargando métricas..." : "Sin información disponible."}
+                  </div>
                 </PanelCard>
               )}
-            </div>
+            </section>
 
             {/* =========================
-                CRUD section
+                Form section
             ========================= */}
-            <div ref={formRef} className="mb-4">
+            <section ref={formRef} className="eco-block">
               <SectionHeader
-                title={editingId ? "Editar actividad" : "Crear actividad"}
-                subtitle="Campos requeridos: título, descripción, fecha, cupo."
+                eyebrow="Gestión"
+                title={editingId ? "Editar actividad" : "Crear nueva actividad"}
+                subtitle="Completa los campos principales para registrar o actualizar una actividad."
                 actions={
                   editingId ? (
                     <button
@@ -685,7 +766,11 @@ export default function AdminDashboard() {
                       Cancelar edición
                     </button>
                   ) : (
-                    <button className="btn btn-outline-secondary btn-sm" type="button" onClick={() => scrollTo(listRef)}>
+                    <button
+                      className="btn btn-outline-secondary btn-sm"
+                      type="button"
+                      onClick={() => scrollTo(listRef)}
+                    >
                       Ver actividades
                     </button>
                   )
@@ -694,65 +779,80 @@ export default function AdminDashboard() {
 
               <PanelCard>
                 <form onSubmit={submit}>
-                  <div className="row g-3">
-                    <div className="col-md-6">
+                  <div className="eco-form-grid">
+                    <div className="eco-field eco-field-span-6">
                       <label className="input-label">Título</label>
                       <input
                         className="form-control"
-                        placeholder="Título"
+                        placeholder="Ej. Jornada de reforestación"
                         value={form.titulo}
                         onChange={(e) => onChange("titulo", e.target.value)}
                         disabled={saving}
                       />
                     </div>
 
-                    <div className="col-md-6">
-                      <label className="input-label">Lugar (opcional)</label>
-                      <input
-                        className="form-control"
-                        placeholder="Lugar"
-                        value={form.lugar}
-                        onChange={(e) => onChange("lugar", e.target.value)}
-                        disabled={saving}
-                      />
+                    <div className="eco-field eco-field-span-6">
+                      <label className="input-label">Lugar</label>
+                      <div className="eco-input-icon-wrap">
+                        <span className="eco-input-icon">
+                          <HiOutlineMapPin />
+                        </span>
+                        <input
+                          className="form-control eco-input-with-icon"
+                          placeholder="Ubicación de la actividad"
+                          value={form.lugar}
+                          onChange={(e) => onChange("lugar", e.target.value)}
+                          disabled={saving}
+                        />
+                      </div>
                     </div>
 
-                    <div className="col-12">
+                    <div className="eco-field eco-field-span-12">
                       <label className="input-label">Descripción</label>
                       <textarea
                         className="form-control"
-                        placeholder="Descripción"
-                        rows={2}
+                        placeholder="Describe el objetivo, dinámica o instrucciones de la actividad"
+                        rows={4}
                         value={form.descripcion}
                         onChange={(e) => onChange("descripcion", e.target.value)}
                         disabled={saving}
                       />
                     </div>
 
-                    <div className="col-md-4">
+                    <div className="eco-field eco-field-span-4">
                       <label className="input-label">Fecha</label>
-                      <input
-                        type="date"
-                        className="form-control"
-                        value={form.fecha}
-                        onChange={(e) => onChange("fecha", e.target.value)}
-                        disabled={saving}
-                      />
+                      <div className="eco-input-icon-wrap">
+                        <span className="eco-input-icon">
+                          <HiOutlineCalendarDays />
+                        </span>
+                        <input
+                          type="date"
+                          className="form-control eco-input-with-icon"
+                          value={form.fecha}
+                          onChange={(e) => onChange("fecha", e.target.value)}
+                          disabled={saving}
+                        />
+                      </div>
                     </div>
 
-                    <div className="col-md-4">
+                    <div className="eco-field eco-field-span-4">
                       <label className="input-label">Cupo total</label>
-                      <input
-                        type="number"
-                        min={1}
-                        className="form-control"
-                        value={form.cupoTotal}
-                        onChange={(e) => onChange("cupoTotal", e.target.value)}
-                        disabled={saving}
-                      />
+                      <div className="eco-input-icon-wrap">
+                        <span className="eco-input-icon">
+                          <HiOutlineUsers />
+                        </span>
+                        <input
+                          type="number"
+                          min={1}
+                          className="form-control eco-input-with-icon"
+                          value={form.cupoTotal}
+                          onChange={(e) => onChange("cupoTotal", e.target.value)}
+                          disabled={saving}
+                        />
+                      </div>
                     </div>
 
-                    <div className="col-md-4">
+                    <div className="eco-field eco-field-span-4">
                       <label className="input-label">Estado</label>
                       <select
                         className="form-select"
@@ -765,43 +865,51 @@ export default function AdminDashboard() {
                       </select>
                     </div>
 
-                    <div className="col-12 d-flex gap-2 flex-wrap">
-                      <button className="btn btn-success" type="submit" disabled={saving}>
-                        {saving ? "Guardando..." : editingId ? "Guardar cambios" : "Crear actividad"}
-                      </button>
+                    <div className="eco-field eco-field-span-12">
+                      <div className="eco-form-actions">
+                        <button className="btn btn-success" type="submit" disabled={saving}>
+                          {saving ? "Guardando..." : editingId ? "Guardar cambios" : "Crear actividad"}
+                        </button>
 
-                      {editingId ? (
-                        <button className="btn btn-outline-secondary" type="button" onClick={cancelEdit} disabled={saving}>
-                          Cancelar
-                        </button>
-                      ) : (
-                        <button
-                          className="btn btn-outline-secondary"
-                          type="button"
-                          onClick={() => {
-                            cancelEdit();
-                            setForm(emptyForm);
-                          }}
-                          disabled={saving}
-                        >
-                          Limpiar
-                        </button>
-                      )}
+                        {editingId ? (
+                          <button
+                            className="btn btn-outline-secondary"
+                            type="button"
+                            onClick={cancelEdit}
+                            disabled={saving}
+                          >
+                            Cancelar
+                          </button>
+                        ) : (
+                          <button
+                            className="btn btn-outline-secondary"
+                            type="button"
+                            onClick={() => {
+                              cancelEdit();
+                              setForm(emptyForm);
+                            }}
+                            disabled={saving}
+                          >
+                            Limpiar formulario
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </form>
               </PanelCard>
-            </div>
+            </section>
 
             {/* =========================
-                Activities list section
+                Activities section
             ========================= */}
-            <div ref={listRef}>
+            <section ref={listRef} className="eco-block">
               <SectionHeader
-                title="Actividades"
-                subtitle="Gestiona evidencias y edita actividades."
+                eyebrow="Listado"
+                title="Actividades registradas"
+                subtitle="Administra evidencias, edita información o elimina registros."
                 actions={
-                  <div className="d-flex gap-2 flex-wrap">
+                  <div className="eco-section-actions">
                     <button
                       className="btn btn-outline-secondary btn-sm"
                       type="button"
@@ -810,7 +918,13 @@ export default function AdminDashboard() {
                     >
                       Nueva actividad
                     </button>
-                    <button className="btn btn-eco-ghost btn-sm" type="button" onClick={load} disabled={loading || saving}>
+
+                    <button
+                      className="btn btn-eco-ghost btn-sm"
+                      type="button"
+                      onClick={load}
+                      disabled={loading || saving}
+                    >
                       {loading ? "Cargando..." : "Refrescar lista"}
                     </button>
                   </div>
@@ -818,9 +932,9 @@ export default function AdminDashboard() {
               />
 
               {loading ? (
-                <div className="py-4 text-center text-muted">Cargando actividades...</div>
+                <div className="eco-loading-box">Cargando actividades...</div>
               ) : activities.length === 0 ? (
-                <PanelCard title="Sin actividades" subtitle="Aún no hay actividades creadas.">
+                <PanelCard title="Sin actividades" subtitle="Aún no se han creado actividades.">
                   <button className="btn btn-success btn-sm" type="button" onClick={() => scrollTo(formRef)}>
                     Crear primera actividad
                   </button>
@@ -828,58 +942,76 @@ export default function AdminDashboard() {
               ) : (
                 <div className="activity-list">
                   {activities.map((a) => (
-                    <div key={a._id} className="activity-card">
-                      <div className="d-flex justify-content-between align-items-start gap-2">
-                        <div className="activity-title">{a.titulo}</div>
+                    <article key={a._id} className="activity-card">
+                      <div className="activity-card-top">
+                        <div>
+                          <h3 className="activity-title">{a.titulo}</h3>
+                          <p className="activity-desc">{a.descripcion || "Sin descripción registrada."}</p>
+                        </div>
+
                         <span className={STATUS_CHIP[a.estado] || "eco-chip eco-chip-muted"}>
                           {(a.estado || "—").toUpperCase()}
                         </span>
                       </div>
 
-                      <div className="activity-meta mt-2">
-                        <div>
-                          <strong>Fecha:</strong> {fmtDate(a.fecha)}
+                      <div className="activity-meta">
+                        <div className="activity-meta-box">
+                          <span className="activity-meta-label">Fecha</span>
+                          <span className="activity-meta-value">{fmtDate(a.fecha)}</span>
                         </div>
-                        <div>
-                          <strong>Cupo:</strong> {a.cupoDisponible}/{a.cupoTotal}
+
+                        <div className="activity-meta-box">
+                          <span className="activity-meta-label">Cupo</span>
+                          <span className="activity-meta-value">
+                            {a.cupoDisponible}/{a.cupoTotal}
+                          </span>
                         </div>
-                        <div>
-                          <strong>Lugar:</strong> {a.lugar || "—"}
+
+                        <div className="activity-meta-box">
+                          <span className="activity-meta-label">Lugar</span>
+                          <span className="activity-meta-value">{a.lugar || "—"}</span>
                         </div>
                       </div>
 
-                      <div className="d-flex gap-2 mt-3">
+                      <div className="activity-actions">
                         <button
-                          className="btn btn-outline-success btn-sm w-100"
+                          className="btn btn-outline-success btn-sm"
                           type="button"
                           onClick={() => goReviewEvidences(a._id)}
                         >
+                          <HiOutlineClipboardDocumentList style={{ marginRight: 6 }} />
                           Evidencias
                         </button>
 
-                        <button className="btn btn-outline-primary btn-sm w-100" type="button" onClick={() => startEdit(a)}>
+                        <button
+                          className="btn btn-outline-primary btn-sm"
+                          type="button"
+                          onClick={() => startEdit(a)}
+                        >
+                          <HiOutlinePencilSquare style={{ marginRight: 6 }} />
                           Editar
                         </button>
 
-                        <button className="btn btn-outline-danger btn-sm w-100" type="button" onClick={() => remove(a._id)}>
+                        <button
+                          className="btn btn-outline-danger btn-sm"
+                          type="button"
+                          onClick={() => remove(a._id)}
+                        >
+                          <HiOutlineTrash style={{ marginRight: 6 }} />
                           Eliminar
                         </button>
                       </div>
-                    </div>
+                    </article>
                   ))}
                 </div>
               )}
-            </div>
-
-            {/* Footer spacing */}
-            <div style={{ height: 8 }} />
+            </section>
           </div>
 
-          {/* ✅ Modal confirmación eliminar (sin "localhost dice") */}
           <ConfirmModal
             show={showConfirm}
             title="Eliminar actividad"
-            message="¿Estás seguro que deseas eliminar esta actividad? Esta acción no se puede deshacer."
+            message="¿Estás seguro de eliminar esta actividad? Esta acción no se puede deshacer."
             onConfirm={confirmDelete}
             onCancel={() => {
               setShowConfirm(false);

@@ -1,18 +1,24 @@
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useCallback,
-  useContext,
-} from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-import "../styles/dashboard.css";
-import "../styles/helpchatbot.css";
+import {
+  HiOutlineChartBar,
+  HiOutlineDocumentText,
+  HiOutlineTicket,
+  HiOutlineSparkles,
+  HiOutlineArrowPath,
+  HiOutlineMagnifyingGlass,
+  HiOutlineQuestionMarkCircle,
+  HiOutlineChevronDown,
+  HiOutlineChevronUp,
+  HiOutlineArrowRight,
+  HiOutlineHome,
+} from "react-icons/hi2";
+import { FaLeaf } from "react-icons/fa";
 
 import LogoutButton from "../components/LogoutButton";
 import { AuthContext } from "../context/AuthContext";
+
+import "../styles/helpchatbot.css";
 
 const BOT_NAME = "EcoBot";
 const NAV_TICKETS = "__NAV_TICKETS__";
@@ -276,25 +282,82 @@ function groupOptions(options) {
 
 function ChatBubble({ botName, msg }) {
   const mine = msg.role === "user";
+
   return (
-    <div className={`bot-msg ${mine ? "is-mine" : "is-theirs"}`}>
-      <div className="bot-msg-meta">
-        <span className="bot-msg-who">{mine ? "TÚ" : botName.toUpperCase()}</span>
-        <span className="bot-msg-time">{msg.ts}</span>
+    <div className={`ecb-msg ${mine ? "is-mine" : "is-bot"}`}>
+      <div className="ecb-msg-meta">
+        <span className="ecb-msg-who">{mine ? "Tú" : botName}</span>
+        <span className="ecb-msg-time">{msg.ts}</span>
       </div>
-      <div className="bot-msg-text">{msg.text}</div>
+      <div className="ecb-msg-text">{msg.text}</div>
     </div>
   );
 }
 
-function OptionsPanel({
-  options,
-  query,
-  setQuery,
-  onChoose,
-  onGoTickets,
-  onReset,
-}) {
+function Sidebar({ displayName, roleSubtitle, goHome, goReport, goTickets, goHelp }) {
+  const initial = (displayName || "U").charAt(0).toUpperCase();
+
+  return (
+    <aside className="ecb-sidebar" aria-label="Navegación principal">
+      <div className="ecb-sidebar-top">
+        <button type="button" className="ecb-brand" onClick={goHome} aria-label="Ir al dashboard">
+          <span className="ecb-brand-icon" aria-hidden="true">
+            <FaLeaf />
+          </span>
+
+          <span className="ecb-brand-copy">
+            <span className="ecb-brand-title">EcoSteps</span>
+            <span className="ecb-brand-subtitle">SGSS • Panel estudiante</span>
+          </span>
+        </button>
+      </div>
+
+      <nav className="ecb-nav" aria-label="Menú lateral">
+        <button type="button" className="ecb-nav-item" onClick={goHome}>
+          <HiOutlineChartBar className="ecb-nav-ico" />
+          <span>Dashboard</span>
+        </button>
+
+        <button type="button" className="ecb-nav-item" onClick={goReport}>
+          <HiOutlineDocumentText className="ecb-nav-ico" />
+          <span>Subir reporte</span>
+        </button>
+
+        <button type="button" className="ecb-nav-item" onClick={goTickets}>
+          <HiOutlineTicket className="ecb-nav-ico" />
+          <span>Tickets</span>
+        </button>
+
+        <button type="button" className="ecb-nav-item is-active" onClick={goHelp}>
+          <HiOutlineSparkles className="ecb-nav-ico" />
+          <span>EcoBot</span>
+        </button>
+      </nav>
+
+      <div className="ecb-sidebar-bottom">
+        <div className="ecb-usercard">
+          <div className="ecb-usercard-top">
+            <div className="ecb-user-avatar" aria-hidden="true">
+              {initial}
+            </div>
+
+            <div className="ecb-user-meta">
+              <div className="ecb-user-label">Sesión activa</div>
+              <div className="ecb-user-name">{displayName}</div>
+              <div className="ecb-user-role">{roleSubtitle}</div>
+            </div>
+          </div>
+
+          <div className="ecb-user-actions">
+            <LogoutButton />
+          </div>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+function OptionsPanel({ options, query, setQuery, onChoose, onGoTickets, onReset }) {
   const grouped = useMemo(() => groupOptions(options), [options]);
   const [openGroup, setOpenGroup] = useState(() => grouped[0]?.[0] ?? "");
 
@@ -305,6 +368,7 @@ function OptionsPanel({
   const filteredGrouped = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return grouped;
+
     const out = [];
     for (const [g, opts] of grouped) {
       const filtered = opts.filter((o) => o.label.toLowerCase().includes(q));
@@ -317,27 +381,11 @@ function OptionsPanel({
     const out = [];
     for (const [g, opts] of filteredGrouped) {
       if (openGroup && g !== openGroup) continue;
-      for (const o of opts) out.push(o);
+      out.push(...opts);
     }
-    return out;
+    return out.slice(0, 10);
   }, [filteredGrouped, openGroup]);
 
-  const numberedGroups = useMemo(() => {
-    const map = new Map();
-    let n = 1;
-    for (const [g, opts] of filteredGrouped) {
-      if (openGroup && g !== openGroup) continue;
-      for (const opt of opts) {
-        map.set(opt.label, n);
-        n += 1;
-        if (n > 10) break;
-      }
-      if (n > 10) break;
-    }
-    return map; // label -> number
-  }, [filteredGrouped, openGroup]);
-
-  // ✅ Atajos siguen funcionando, solo no se muestran (si quieres quitarlos también, te lo dejo en 2 líneas)
   useEffect(() => {
     const onKey = (e) => {
       const tag = (e.target?.tagName || "").toLowerCase();
@@ -354,9 +402,7 @@ function OptionsPanel({
         return;
       }
 
-      const isDigit = /^[0-9]$/.test(e.key);
-      if (!isDigit) return;
-
+      if (!/^[0-9]$/.test(e.key)) return;
       const num = e.key === "0" ? 10 : Number(e.key);
       const pick = flatVisible[num - 1];
       if (pick) onChoose(pick);
@@ -369,85 +415,83 @@ function OptionsPanel({
   const toggle = (g) => setOpenGroup((cur) => (cur === g ? "" : g));
 
   return (
-    <div className="dash-panel dash-panel-side bot-side">
-      <div className="dash-panel-head">
+    <div className="ecb-card ecb-options-card">
+      <div className="ecb-card-head">
         <div>
-          <div className="dash-panel-title">Opciones</div>
-          <div className="dash-panel-sub">Elige un tema para continuar</div>
+          <h3 className="ecb-card-title">Opciones</h3>
+          <p className="ecb-card-subtitle">Elige un tema para continuar</p>
         </div>
 
-        <div className="bot-head-actions">
-          <button className="dash-btn dash-btn-ghost bot-btn-sm" type="button" onClick={onReset}>
-            Reiniciar
+        <div className="ecb-inline-actions">
+          <button className="ecb-btn ecb-btn-secondary ecb-btn-sm" type="button" onClick={onReset}>
+            <HiOutlineArrowPath />
+            <span>Reiniciar</span>
           </button>
-          <button className="dash-btn dash-btn-primary bot-btn-sm" type="button" onClick={onGoTickets}>
-            Ir a Tickets
+
+          <button className="ecb-btn ecb-btn-primary ecb-btn-sm" type="button" onClick={onGoTickets}>
+            <HiOutlineTicket />
+            <span>Ir a Tickets</span>
           </button>
         </div>
       </div>
 
-      <div className="bot-search">
-        <div className="bot-search-wrap">
-          <span className="bot-search-ico" aria-hidden="true">⌕</span>
+      <div className="ecb-search">
+        <div className="ecb-search-wrap">
+          <span className="ecb-search-ico" aria-hidden="true">
+            <HiOutlineMagnifyingGlass />
+          </span>
+
           <input
-            className="bot-input"
+            className="ecb-search-input"
             placeholder="Buscar (ej. evidencia, reporte, ticket)"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
-
-        {query ? (
-          <button
-            className="dash-btn dash-btn-ghost bot-btn-sm"
-            onClick={() => setQuery("")}
-            type="button"
-          >
-            Limpiar
-          </button>
-        ) : null}
       </div>
 
-      <div className="dash-panel-body">
+      <div className="ecb-card-body ecb-options-body">
         {filteredGrouped.length === 0 ? (
-          <div className="dash-empty">
-            <div className="dash-empty-title">Sin resultados</div>
-            <p className="dash-empty-text">No hay opciones para “{query}”.</p>
+          <div className="ecb-empty-mini">
+            <div className="ecb-empty-mini-title">Sin resultados</div>
+            <p className="ecb-empty-mini-text">No hay opciones para “{query}”.</p>
           </div>
         ) : (
           filteredGrouped.map(([groupName, opts]) => {
             const isOpen = openGroup === groupName;
 
             return (
-              <div key={groupName} className="bot-acc">
+              <div key={groupName} className="ecb-acc">
                 <button
                   type="button"
-                  className={`bot-acc-head ${isOpen ? "is-open" : ""}`}
+                  className={`ecb-acc-head ${isOpen ? "is-open" : ""}`}
                   onClick={() => toggle(groupName)}
                   aria-expanded={isOpen}
                 >
-                  <span className="bot-acc-title">{groupName}</span>
-                  <span className="bot-acc-icon">{isOpen ? "–" : "+"}</span>
+                  <span className="ecb-acc-title">{groupName}</span>
+                  <span className="ecb-acc-icon">
+                    {isOpen ? <HiOutlineChevronUp /> : <HiOutlineChevronDown />}
+                  </span>
                 </button>
 
                 {isOpen ? (
-                  <div className="bot-acc-body">
-                    <div className="bot-options">
-                      {opts.slice(0, 10).map((opt) => {
-                        const n = numberedGroups.get(opt.label);
-                        return (
-                          <button
-                            key={opt.label}
-                            className="bot-opt"
-                            type="button"
-                            onClick={() => onChoose(opt)}
-                            title={opt.label}
-                          >
-                            <span className="bot-opt-num">{n ?? "•"}</span>
-                            <span className="bot-opt-label">{opt.label}</span>
-                          </button>
-                        );
-                      })}
+                  <div className="ecb-acc-body">
+                    <div className="ecb-options-list">
+                      {opts.slice(0, 10).map((opt, idx) => (
+                        <button
+                          key={`${groupName}_${opt.label}`}
+                          className="ecb-option"
+                          type="button"
+                          onClick={() => onChoose(opt)}
+                          title={opt.label}
+                        >
+                          <span className="ecb-option-num">{idx + 1}</span>
+                          <span className="ecb-option-label">{opt.label}</span>
+                          <span className="ecb-option-arrow" aria-hidden="true">
+                            <HiOutlineArrowRight />
+                          </span>
+                        </button>
+                      ))}
                     </div>
                   </div>
                 ) : null}
@@ -457,7 +501,7 @@ function OptionsPanel({
         )}
       </div>
 
-      <div className="bot-sidehint">
+      <div className="ecb-options-hint">
         Tip: busca por palabra clave. Ej.: <strong>cupo</strong>, <strong>rechazada</strong>, <strong>reporte</strong>.
       </div>
     </div>
@@ -486,7 +530,6 @@ export default function HelpChatbot() {
   const fullFromParts = [first, last].filter(Boolean).join(" ").trim();
 
   const displayName = fullFromParts || u?.fullName || u?.name || u?.email || "Usuario";
-
   const roleSubtitle = u?.role === "admin" ? "Administrador" : "Servicio Social Activo";
 
   const [nodeId, setNodeId] = useState("start");
@@ -508,7 +551,9 @@ export default function HelpChatbot() {
   }, []);
 
   const goHome = useCallback(() => navigate(ROUTES.home), [navigate]);
+  const goReport = useCallback(() => navigate(ROUTES.report), [navigate]);
   const goTickets = useCallback(() => navigate(ROUTES.tickets), [navigate]);
+  const goHelp = useCallback(() => navigate(ROUTES.help), [navigate]);
 
   const choose = useCallback(
     (opt) => {
@@ -519,7 +564,7 @@ export default function HelpChatbot() {
 
         if (opt.next === NAV_TICKETS) {
           nextMsgs.push(makeMsg("bot", "Abriendo Mis Tickets..."));
-          setTimeout(() => goTickets(), 200);
+          setTimeout(() => goTickets(), 220);
           return nextMsgs;
         }
 
@@ -535,105 +580,97 @@ export default function HelpChatbot() {
   );
 
   return (
-    <div className="dash-page">
-      <div className="dash-shell">
-        <aside className="dash-sidebar" aria-label="Navegación">
-          <div className="dash-sidebar-head">
-            <div className="dash-brand">
-              <div className="dash-brand-icon">E</div>
-              <div>
-                <div className="dash-brand-name">EcoSteps</div>
-                <div className="dash-brand-sub">SGSS • Panel estudiante</div>
-              </div>
-            </div>
-          </div>
+    <div className="ecb-page">
+      <div className="ecb-shell">
+        <Sidebar
+          displayName={displayName}
+          roleSubtitle={roleSubtitle}
+          goHome={goHome}
+          goReport={goReport}
+          goTickets={goTickets}
+          goHelp={goHelp}
+        />
 
-          <nav className="dash-nav">
-            <button type="button" className="dash-nav-item" onClick={goHome}>
-              Dashboard
-            </button>
+        <main className="ecb-main" aria-label="EcoBot">
+          <section className="ecb-hero">
+            <div className="ecb-hero-copy">
+              <span className="ecb-kicker">ASISTENTE DE AYUDA</span>
+              <h1 className="ecb-hero-title">{BOT_NAME}</h1>
+              <p className="ecb-hero-text">
+                Guía rápida del sistema para actividades, evidencias, reportes y tickets.
+              </p>
 
-            <button type="button" className="dash-nav-item" onClick={() => navigate(ROUTES.report)}>
-              Subir reporte
-            </button>
-
-            <button type="button" className="dash-nav-item" onClick={goTickets}>
-              Tickets
-            </button>
-
-            <button type="button" className="dash-nav-item is-active" onClick={() => navigate(ROUTES.help)}>
-              EcoBot
-            </button>
-          </nav>
-
-          <div className="dash-sidebar-foot">
-            <div className="dash-profile">
-              <div className="dash-profile-label">Sesión</div>
-              <div className="dash-profile-name">{displayName}</div>
-              <div className="dash-profile-sub">{roleSubtitle}</div>
-
-              <div className="dash-profile-actions">
-                <LogoutButton />
-              </div>
-            </div>
-          </div>
-        </aside>
-
-        <main className="dash-main" aria-label="Contenido principal">
-          <div className="dash-card">
-            <div className="dash-top">
-              <div>
-                <h2 className="dash-title">{BOT_NAME}</h2>
-                <p className="dash-subtitle">Guía rápida del sistema (menú por opciones)</p>
-              </div>
-
-              <div className="dash-top-actions">
-                <button className="dash-btn dash-btn-ghost bot-btn-sm" type="button" onClick={reset}>
-                  Reiniciar
+              <div className="ecb-hero-actions">
+                <button className="ecb-btn ecb-btn-primary" type="button" onClick={reset}>
+                  <HiOutlineArrowPath />
+                  <span>Reiniciar</span>
                 </button>
-                <button className="dash-btn dash-btn-primary bot-btn-sm" type="button" onClick={goTickets}>
-                  Tickets
+
+                <button className="ecb-btn ecb-btn-secondary" type="button" onClick={goTickets}>
+                  <HiOutlineTicket />
+                  <span>Tickets</span>
+                </button>
+
+                <button className="ecb-btn ecb-btn-secondary" type="button" onClick={goHome}>
+                  <HiOutlineHome />
+                  <span>Dashboard</span>
                 </button>
               </div>
             </div>
+          </section>
 
-            <div className="dash-grid">
-              <section className="dash-panel" aria-label="Chat EcoBot">
-                <div className="dash-panel-head">
-                  <div>
-                    <div className="dash-panel-title">Chat de ayuda</div>
-                    <div className="dash-panel-sub">Selecciona una opción para continuar</div>
-                  </div>
+          <section className="ecb-content-grid">
+            <section className="ecb-card ecb-chat-card" aria-label="Chat EcoBot">
+              <div className="ecb-card-head">
+                <div>
+                  <h2 className="ecb-card-title">Chat de ayuda</h2>
+                  <p className="ecb-card-subtitle">Selecciona una opción para continuar</p>
+                </div>
 
-                  <div className="bot-head-actions">
-                    <button className="dash-btn dash-btn-ghost bot-btn-sm" type="button" onClick={goHome}>
-                      Volver al Dashboard
-                    </button>
+                <div className="ecb-inline-actions">
+                  <button className="ecb-btn ecb-btn-secondary ecb-btn-sm" type="button" onClick={goHome}>
+                    <HiOutlineHome />
+                    <span>Volver al Dashboard</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="ecb-card-body">
+                <div className="ecb-chat">
+                  {messages.map((m) => (
+                    <ChatBubble key={m.id} botName={BOT_NAME} msg={m} />
+                  ))}
+                  <div ref={endRef} />
+                </div>
+              </div>
+            </section>
+
+            <aside className="ecb-side" aria-label="Opciones EcoBot">
+              <OptionsPanel
+                options={options}
+                query={query}
+                setQuery={setQuery}
+                onChoose={choose}
+                onGoTickets={goTickets}
+                onReset={reset}
+              />
+
+              <div className="ecb-card ecb-tip-card">
+                <div className="ecb-card-head">
+                  <div className="ecb-side-head">
+                    <HiOutlineQuestionMarkCircle />
+                    <h3>Ayuda rápida</h3>
                   </div>
                 </div>
 
-                <div className="dash-panel-body">
-                  <div className="bot-chat">
-                    {messages.map((m) => (
-                      <ChatBubble key={m.id} botName={BOT_NAME} msg={m} />
-                    ))}
-                    <div ref={endRef} />
-                  </div>
+                <div className="ecb-card-body">
+                  <p className="ecb-side-text">
+                    Puedes navegar por categorías o buscar palabras clave para encontrar la guía adecuada más rápido.
+                  </p>
                 </div>
-              </section>
-
-              <aside aria-label="Opciones EcoBot">
-                <OptionsPanel
-                  options={options}
-                  query={query}
-                  setQuery={setQuery}
-                  onChoose={choose}
-                  onGoTickets={goTickets}
-                  onReset={reset}
-                />
-              </aside>
-            </div>
-          </div>
+              </div>
+            </aside>
+          </section>
         </main>
       </div>
     </div>

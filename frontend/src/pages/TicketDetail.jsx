@@ -1,45 +1,86 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import {
+  HiOutlineArrowLeft,
+  HiOutlineArrowPath,
+  HiOutlinePaperAirplane,
+  HiOutlinePaperClip,
+  HiOutlineXMark,
+  HiOutlineChatBubbleLeftRight,
+  HiOutlineClock,
+  HiOutlineTag,
+  HiOutlineUserCircle,
+  HiOutlineEnvelope,
+  HiOutlineClipboardDocumentList,
+  HiOutlineArrowDownCircle,
+} from "react-icons/hi2";
 
-import { getTicketById, sendTicketMessage, updateTicketStatus } from "../services/ticketService";
+import {
+  getTicketById,
+  sendTicketMessage,
+  updateTicketStatus,
+} from "../services/ticketService";
 import { getRole } from "../services/authSession";
 
 import "../styles/ticketdetail.css";
 
 const STATUS = {
-  open: { label: "ABIERTO", pill: "dash-pill dash-pill-muted" },
-  in_progress: { label: "EN PROCESO", pill: "dash-pill dash-pill-warn" },
-  resolved: { label: "RESUELTO", pill: "dash-pill dash-pill-ok" },
-  canceled: { label: "CANCELADO", pill: "dash-pill dash-pill-muted" },
+  open: { label: "ABIERTO", className: "td-chip td-chip-muted" },
+  in_progress: { label: "EN PROCESO", className: "td-chip td-chip-warn" },
+  resolved: { label: "RESUELTO", className: "td-chip td-chip-success" },
+  canceled: { label: "CANCELADO", className: "td-chip td-chip-muted" },
 };
 
-function fmtDate(d) {
-  if (!d) return "—";
-  const x = new Date(d);
-  if (Number.isNaN(x.getTime())) return "—";
-  return x.toLocaleString("es-MX", { dateStyle: "short", timeStyle: "short" });
+function fmtDate(value) {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleString("es-MX", {
+    dateStyle: "short",
+    timeStyle: "short",
+  });
 }
 
 function formatBytes(bytes = 0) {
   if (!bytes) return "0 KB";
+
   const units = ["B", "KB", "MB", "GB"];
-  let i = 0;
   let n = bytes;
+  let i = 0;
+
   while (n >= 1024 && i < units.length - 1) {
     n /= 1024;
     i += 1;
   }
+
   return `${n.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
 }
 
-function SkeletonTicket() {
+function AttachmentLink({ fileUrl, fileName }) {
+  if (!fileUrl) return null;
+
   return (
-    <div className="dash-skel" aria-label="Cargando ticket">
-      <div className="dash-skel-row">
-        <div className="dash-skel-bar w40" />
-        <div className="dash-skel-bar w22" />
-      </div>
-      <div className="dash-skel-card tall" />
+    <a
+      className="td-attachment"
+      href={fileUrl}
+      target="_blank"
+      rel="noreferrer"
+      title="Abrir archivo adjunto"
+    >
+      <span className="td-attachment-icon" aria-hidden="true">
+        <HiOutlinePaperClip />
+      </span>
+      <span className="td-attachment-name">{fileName || "Archivo adjunto"}</span>
+    </a>
+  );
+}
+
+function LoadingState() {
+  return (
+    <div className="td-skel" aria-label="Cargando ticket">
+      <div className="td-skel-bar w34" />
+      <div className="td-skel-bar w22" />
+      <div className="td-skel-panel" />
     </div>
   );
 }
@@ -47,13 +88,12 @@ function SkeletonTicket() {
 export default function TicketDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const role = getRole(); // "user" | "admin"
+  const role = getRole();
 
   const chatRef = useRef(null);
   const fileRef = useRef(null);
 
   const [ticket, setTicket] = useState(null);
-
   const [text, setText] = useState("");
   const [file, setFile] = useState(null);
 
@@ -72,10 +112,13 @@ export default function TicketDetails() {
   const scrollToBottom = useCallback((smooth = true) => {
     const el = chatRef.current;
     if (!el) return;
-    el.scrollTo({ top: el.scrollHeight, behavior: smooth ? "smooth" : "auto" });
+    el.scrollTo({
+      top: el.scrollHeight,
+      behavior: smooth ? "smooth" : "auto",
+    });
   }, []);
 
-  const load = useCallback(async () => {
+  const loadTicket = useCallback(async () => {
     try {
       setLoading(true);
       setAlert(null);
@@ -84,54 +127,60 @@ export default function TicketDetails() {
       setTicket(res?.ticket || null);
     } catch (e) {
       setTicket(null);
-      setAlert({ type: "danger", text: e?.message || "Error al cargar ticket" });
+      setAlert({
+        type: "error",
+        text: e?.message || "Error al cargar el ticket",
+      });
     } finally {
       setLoading(false);
     }
   }, [id]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    loadTicket();
+  }, [loadTicket]);
 
   useEffect(() => {
-    if (!loading) scrollToBottom(false);
+    if (!loading) {
+      scrollToBottom(false);
+    }
   }, [loading, ticket?.messages?.length, scrollToBottom]);
 
   const statusUI = useMemo(() => STATUS[ticket?.status] || STATUS.open, [ticket?.status]);
   const isCanceled = ticket?.status === "canceled";
-  const messageCount = (ticket?.messages || []).length;
+  const messages = ticket?.messages || [];
+  const messageCount = messages.length;
 
   const canSend = useMemo(() => {
     return !sending && !isCanceled && (text.trim().length > 0 || !!file);
   }, [sending, isCanceled, text, file]);
 
-  const onKeyDown = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      if (canSend) send();
-    }
-  };
+  const onPickFile = useCallback((e) => {
+    const selected = e.target.files?.[0] || null;
+    setFile(selected);
+  }, []);
 
-  const onPickFile = (e) => {
-    const f = e.target.files?.[0] || null;
-    setFile(f);
-  };
-
-  const removeFile = () => {
+  const removeFile = useCallback(() => {
     setFile(null);
     clearFileInput();
-  };
+  }, [clearFileInput]);
 
-  const send = useCallback(async () => {
-    const clean = text.trim();
+  const onSend = useCallback(async () => {
+    const cleanText = text.trim();
 
-    if (!clean && !file) {
-      setAlert({ type: "danger", text: "Escribe un mensaje o adjunta un archivo." });
+    if (!cleanText && !file) {
+      setAlert({
+        type: "error",
+        text: "Escribe un mensaje o adjunta un archivo.",
+      });
       return;
     }
+
     if (isCanceled) {
-      setAlert({ type: "danger", text: "Este ticket está cancelado y no admite mensajes." });
+      setAlert({
+        type: "error",
+        text: "Este ticket está cancelado y no admite más mensajes.",
+      });
       return;
     }
 
@@ -139,314 +188,411 @@ export default function TicketDetails() {
       setSending(true);
       setAlert(null);
 
-      const res = await sendTicketMessage(id, { text: clean, file });
+      const res = await sendTicketMessage(id, {
+        text: cleanText,
+        file,
+      });
 
-      setAlert({ type: "success", text: `✅ ${res?.message || "Mensaje enviado"}` });
+      setAlert({
+        type: "success",
+        text: `✅ ${res?.message || "Mensaje enviado correctamente"}`,
+      });
 
       setText("");
       setFile(null);
       clearFileInput();
 
-      await load();
+      await loadTicket();
       setTimeout(() => scrollToBottom(true), 80);
     } catch (e) {
-      setAlert({ type: "danger", text: `❌ ${e?.message || "Error al enviar mensaje"}` });
+      setAlert({
+        type: "error",
+        text: `❌ ${e?.message || "Error al enviar mensaje"}`,
+      });
     } finally {
       setSending(false);
     }
-  }, [text, file, id, isCanceled, load, clearFileInput, scrollToBottom]);
+  }, [text, file, isCanceled, id, clearFileInput, loadTicket, scrollToBottom]);
+
+  const onKeyDown = useCallback(
+    (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        if (canSend) onSend();
+      }
+    },
+    [canSend, onSend]
+  );
 
   const setTicketStatus = useCallback(
-    async (s) => {
+    async (nextStatus) => {
       try {
         setAlert(null);
-        const res = await updateTicketStatus(id, s);
 
-        if (s === "resolved") {
-          setAlert({ type: "success", text: `✅ ${res?.message || "Ticket resuelto"}` });
-          setTimeout(goBack, 650);
+        const res = await updateTicketStatus(id, nextStatus);
+
+        if (nextStatus === "resolved") {
+          setAlert({
+            type: "success",
+            text: `✅ ${res?.message || "Ticket resuelto"}`,
+          });
+          setTimeout(goBack, 700);
           return;
         }
 
-        setAlert({ type: "success", text: `✅ ${res?.message || "Estado actualizado"}` });
-        await load();
+        setAlert({
+          type: "success",
+          text: `✅ ${res?.message || "Estado actualizado"}`,
+        });
+
+        await loadTicket();
       } catch (e) {
-        setAlert({ type: "danger", text: `❌ ${e?.message || "Error al actualizar estado"}` });
+        setAlert({
+          type: "error",
+          text: `❌ ${e?.message || "Error al actualizar estado"}`,
+        });
       }
     },
-    [id, load, goBack]
+    [goBack, id, loadTicket]
   );
 
-  const renderAttachment = (m) => {
-    if (!m?.fileUrl) return null;
-    const name = m.fileName || "Archivo adjunto";
-    return (
-      <a className="tkt-attach" href={m.fileUrl} target="_blank" rel="noreferrer" title="Abrir archivo">
-        📎 {name}
-      </a>
-    );
-  };
-
   return (
-    <div className="dash-page">
-      <div className="dash-shell dash-shell--single">
-        <main className="dash-main" aria-label="Ticket detalle">
-          <section className="dash-card dash-card--desktop">
-            {/* Top header */}
-            <div className="dash-top">
-              <div>
-                <h2 className="dash-title">Ticket</h2>
-                <p className="dash-subtitle">
-                  {role === "admin" ? "Vista administrador" : "Vista usuario"} ·{" "}
-                  <span className="tkt-id">ID: {id}</span>
-                </p>
+    <div className="td-page">
+      <div className="td-shell">
+        <section className="td-main-card">
+          <header className="td-hero">
+            <div className="td-hero-copy">
+              <span className="td-kicker">
+                {role === "admin" ? "GESTIÓN DE TICKET" : "SEGUIMIENTO DE TICKET"}
+              </span>
+              <h1 className="td-hero-title">{ticket?.subject || "Detalle del ticket"}</h1>
+              <p className="td-hero-text">
+                {role === "admin" ? "Vista administrador" : "Vista usuario"} · ID:{" "}
+                <span className="td-ticket-id">{id}</span>
+              </p>
+            </div>
+
+            <div className="td-hero-actions">
+              {ticket?.status ? <span className={statusUI.className}>{statusUI.label}</span> : null}
+
+              <button
+                className="td-btn td-btn-secondary"
+                type="button"
+                onClick={loadTicket}
+                disabled={loading || sending}
+              >
+                <HiOutlineArrowPath />
+                <span>{loading ? "Cargando..." : "Refrescar"}</span>
+              </button>
+
+              <button
+                className="td-btn td-btn-primary"
+                type="button"
+                onClick={goBack}
+                disabled={sending}
+              >
+                <HiOutlineArrowLeft />
+                <span>Volver</span>
+              </button>
+            </div>
+          </header>
+
+          {alert?.text ? (
+            <div
+              className={`td-alert ${alert.type === "success" ? "is-success" : "is-error"}`}
+              role="alert"
+            >
+              {alert.text}
+            </div>
+          ) : null}
+
+          {loading ? (
+            <LoadingState />
+          ) : !ticket ? (
+            <div className="td-empty">
+              <div className="td-empty-icon" aria-hidden="true">
+                <HiOutlineClipboardDocumentList />
               </div>
+              <h3 className="td-empty-title">Ticket no encontrado</h3>
+              <p className="td-empty-text">
+                Puede que ya no exista o no tengas permisos para verlo.
+              </p>
 
-              <div className="dash-top-actions">
-                {ticket?.status ? <span className={statusUI.pill}>{statusUI.label}</span> : null}
-
-                <button className="dash-btn dash-btn-ghost" type="button" onClick={load} disabled={loading || sending}>
-                  {loading ? "Cargando..." : "Refrescar"}
-                </button>
-
-                <button className="dash-btn dash-btn-primary" type="button" onClick={goBack} disabled={sending}>
+              <div className="td-empty-actions">
+                <button className="td-btn td-btn-secondary" type="button" onClick={goBack}>
                   Volver
+                </button>
+                <button className="td-btn td-btn-primary" type="button" onClick={loadTicket}>
+                  Reintentar
                 </button>
               </div>
             </div>
+          ) : (
+            <div className="td-layout">
+              <aside className="td-side" aria-label="Información del ticket">
+                <div className="td-card">
+                  <div className="td-card-head">
+                    <h2 className="td-card-title">Resumen del ticket</h2>
+                    <p className="td-card-subtitle">Información general y contexto</p>
+                  </div>
 
-            {alert?.text ? (
-              <div className={`dash-alert ${alert.type === "success" ? "is-success" : "is-danger"}`} role="alert">
-                {alert.text}
-              </div>
-            ) : null}
-
-            {loading ? (
-              <SkeletonTicket />
-            ) : !ticket ? (
-              <div className="dash-empty" role="status" aria-live="polite">
-                <div className="dash-empty-icon" aria-hidden="true">🧾</div>
-                <h3 className="dash-empty-title">Ticket no encontrado</h3>
-                <p className="dash-empty-text">Puede que ya haya sido eliminado o no tengas acceso.</p>
-                <div className="dash-empty-actions">
-                  <button className="dash-btn dash-btn-ghost" type="button" onClick={goBack}>
-                    Volver
-                  </button>
-                  <button className="dash-btn dash-btn-primary" type="button" onClick={load}>
-                    Reintentar
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="tkt-layout">
-                {/* LEFT: sidebar meta */}
-                <aside className="tkt-side" aria-label="Información del ticket">
-                  <section className="dash-panel">
-                    <div className="dash-panel-head">
-                      <div>
-                        <div className="dash-panel-title">{ticket?.subject || "Sin asunto"}</div>
-                        <div className="dash-panel-sub">
-                          Creado: <strong>{fmtDate(ticket?.createdAt)}</strong>
+                  <div className="td-card-body">
+                    <div className="td-info-list">
+                      <div className="td-info-row">
+                        <div className="td-info-icon">
+                          <HiOutlineClock />
+                        </div>
+                        <div>
+                          <div className="td-info-label">Creado</div>
+                          <div className="td-info-value">{fmtDate(ticket?.createdAt)}</div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="dash-panel-body">
-                      <div className="tkt-kv">
-                        <div className="tkt-kv-row">
-                          <span className="tkt-k">Actividad</span>
-                          <span className="tkt-v">{ticket?.activity?.titulo || "—"}</span>
+                      <div className="td-info-row">
+                        <div className="td-info-icon">
+                          <HiOutlineTag />
                         </div>
+                        <div>
+                          <div className="td-info-label">Actividad</div>
+                          <div className="td-info-value">{ticket?.activity?.titulo || "Sin actividad vinculada"}</div>
+                        </div>
+                      </div>
 
-                        {role === "admin" && ticket?.user ? (
-                          <>
-                            <div className="tkt-kv-row">
-                              <span className="tkt-k">Usuario</span>
-                              <span className="tkt-v">
+                      {role === "admin" && ticket?.user ? (
+                        <>
+                          <div className="td-info-row">
+                            <div className="td-info-icon">
+                              <HiOutlineUserCircle />
+                            </div>
+                            <div>
+                              <div className="td-info-label">Usuario</div>
+                              <div className="td-info-value">
                                 {ticket.user.nombre || ""} {ticket.user.apellido || ""}
-                              </span>
+                              </div>
                             </div>
-                            <div className="tkt-kv-row">
-                              <span className="tkt-k">Correo</span>
-                              <span className="tkt-v">{ticket.user.email || "—"}</span>
-                            </div>
-                          </>
-                        ) : null}
-                      </div>
-
-                      <div className="tkt-stats tkt-stats--stack">
-                        <span className="dash-pill dash-pill-muted">Mensajes: {messageCount}</span>
-                        {ticket?.activity?.titulo ? (
-                          <span className="dash-pill dash-pill-ok">Vinculado a actividad</span>
-                        ) : (
-                          <span className="dash-pill dash-pill-muted">Sin actividad</span>
-                        )}
-                        {isCanceled ? <span className="dash-pill dash-pill-muted">No admite mensajes</span> : null}
-                      </div>
-
-                      {role === "admin" ? (
-                        <div className="tkt-admin">
-                          <div className="tkt-admin-title">Estado</div>
-                          <div className="dash-segment" role="group" aria-label="Estado del ticket">
-                            <button
-                              type="button"
-                              className={`dash-segment-btn ${ticket.status === "open" ? "is-active" : ""}`}
-                              onClick={() => setTicketStatus("open")}
-                              disabled={sending}
-                            >
-                              Abrir
-                            </button>
-                            <button
-                              type="button"
-                              className={`dash-segment-btn ${ticket.status === "in_progress" ? "is-active" : ""}`}
-                              onClick={() => setTicketStatus("in_progress")}
-                              disabled={sending}
-                            >
-                              En proceso
-                            </button>
-                            <button
-                              type="button"
-                              className={`dash-segment-btn ${ticket.status === "canceled" ? "is-active" : ""}`}
-                              onClick={() => setTicketStatus("canceled")}
-                              disabled={sending}
-                            >
-                              Cancelar
-                            </button>
-                            <button
-                              type="button"
-                              className="dash-segment-btn"
-                              onClick={() => setTicketStatus("resolved")}
-                              disabled={sending}
-                              title="Al marcar como resuelto, el ticket se elimina"
-                            >
-                              Resuelto
-                            </button>
                           </div>
-                        </div>
+
+                          <div className="td-info-row">
+                            <div className="td-info-icon">
+                              <HiOutlineEnvelope />
+                            </div>
+                            <div>
+                              <div className="td-info-label">Correo</div>
+                              <div className="td-info-value">{ticket.user.email || "—"}</div>
+                            </div>
+                          </div>
+                        </>
                       ) : null}
                     </div>
-                  </section>
-                </aside>
 
-                {/* RIGHT: chat */}
-                <section className="tkt-main" aria-label="Conversación">
-                  <section className="dash-panel tkt-chatpanel">
-                    <div className="dash-panel-head">
-                      <div>
-                        <div className="dash-panel-title">Historial</div>
-                        <div className="dash-panel-sub">Enter para enviar · Shift+Enter para salto</div>
-                      </div>
+                    <div className="td-chip-stack">
+                      <span className="td-chip td-chip-muted">Mensajes: {messageCount}</span>
 
-                      <button
-                        className="dash-btn dash-btn-ghost"
-                        type="button"
-                        onClick={() => scrollToBottom(true)}
-                        disabled={sending}
-                      >
-                        Ir al final
-                      </button>
+                      {ticket?.activity?.titulo ? (
+                        <span className="td-chip td-chip-success">Vinculado a actividad</span>
+                      ) : (
+                        <span className="td-chip td-chip-muted">Sin actividad</span>
+                      )}
+
+                      {isCanceled ? (
+                        <span className="td-chip td-chip-muted">No admite mensajes</span>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+
+                {role === "admin" ? (
+                  <div className="td-card">
+                    <div className="td-card-head">
+                      <h2 className="td-card-title">Cambiar estado</h2>
+                      <p className="td-card-subtitle">Acciones administrativas</p>
                     </div>
 
-                    <div className="dash-panel-body tkt-chatpanel-body">
-                      <div className="tkt-chat" ref={chatRef} role="log" aria-label="Mensajes">
-                        {messageCount === 0 ? (
-                          <div className="dash-empty" role="status" aria-live="polite">
-                            <div className="dash-empty-icon" aria-hidden="true">💬</div>
-                            <h3 className="dash-empty-title">Aún no hay mensajes</h3>
-                            <p className="dash-empty-text">Escribe el primer mensaje para iniciar el seguimiento.</p>
-                          </div>
-                        ) : (
-                          (ticket.messages || []).map((m) => {
-                            const mine =
-                              (role === "admin" && m.senderRole === "admin") ||
-                              (role === "user" && m.senderRole === "user");
+                    <div className="td-card-body">
+                      <div className="td-segment" role="group" aria-label="Cambiar estado del ticket">
+                        <button
+                          type="button"
+                          className={`td-segment-btn ${ticket.status === "open" ? "is-active" : ""}`}
+                          onClick={() => setTicketStatus("open")}
+                          disabled={sending}
+                        >
+                          Abrir
+                        </button>
 
-                            return (
-                              <div key={m._id} className={`tkt-msg ${mine ? "is-mine" : "is-theirs"}`}>
-                                <div className="tkt-msg-top">
-                                  <span className="tkt-msg-who">
-                                    {m.senderRole === "admin" ? "ADMIN" : "USER"}
-                                    {m?.sender?.nombre ? ` · ${m.sender.nombre} ${m.sender.apellido || ""}` : ""}
-                                  </span>
-                                  <span className="tkt-msg-date">{fmtDate(m.createdAt)}</span>
-                                </div>
+                        <button
+                          type="button"
+                          className={`td-segment-btn ${ticket.status === "in_progress" ? "is-active" : ""}`}
+                          onClick={() => setTicketStatus("in_progress")}
+                          disabled={sending}
+                        >
+                          En proceso
+                        </button>
 
-                                {m.text ? <div className="tkt-msg-text">{m.text}</div> : null}
-                                {renderAttachment(m)}
-                              </div>
-                            );
-                          })
-                        )}
+                        <button
+                          type="button"
+                          className={`td-segment-btn ${ticket.status === "canceled" ? "is-active" : ""}`}
+                          onClick={() => setTicketStatus("canceled")}
+                          disabled={sending}
+                        >
+                          Cancelar
+                        </button>
+
+                        <button
+                          type="button"
+                          className="td-segment-btn"
+                          onClick={() => setTicketStatus("resolved")}
+                          disabled={sending}
+                          title="Al marcar como resuelto, el ticket se cierra"
+                        >
+                          Resuelto
+                        </button>
                       </div>
+                    </div>
+                  </div>
+                ) : null}
+              </aside>
 
-                      {/* Composer (pegado abajo) */}
-                      <form
-                        className={`tkt-composer ${isCanceled ? "is-disabled" : ""}`}
-                        onSubmit={(e) => {
-                          e.preventDefault();
-                          if (canSend) send();
-                        }}
-                      >
-                        <textarea
-                          className="dash-textarea tkt-textarea"
-                          rows={3}
-                          value={text}
-                          onChange={(e) => setText(e.target.value)}
-                          placeholder={isCanceled ? "Este ticket está cancelado." : "Escribe un mensaje…"}
-                          onKeyDown={onKeyDown}
+              <main className="td-chat-col" aria-label="Conversación del ticket">
+                <div className="td-card td-chat-card">
+                  <div className="td-card-head td-chat-head">
+                    <div>
+                      <h2 className="td-card-title">Historial de mensajes</h2>
+                      <p className="td-card-subtitle">
+                        Enter para enviar · Shift + Enter para salto de línea
+                      </p>
+                    </div>
+
+                    <button
+                      className="td-btn td-btn-secondary"
+                      type="button"
+                      onClick={() => scrollToBottom(true)}
+                      disabled={sending}
+                    >
+                      <HiOutlineArrowDownCircle />
+                      <span>Ir al final</span>
+                    </button>
+                  </div>
+
+                  <div className="td-chat-body">
+                    <div className="td-chat-box" ref={chatRef} role="log" aria-label="Lista de mensajes">
+                      {messageCount === 0 ? (
+                        <div className="td-empty td-empty-chat">
+                          <div className="td-empty-icon" aria-hidden="true">
+                            <HiOutlineChatBubbleLeftRight />
+                          </div>
+                          <h3 className="td-empty-title">Aún no hay mensajes</h3>
+                          <p className="td-empty-text">
+                            Escribe el primer mensaje para iniciar el seguimiento.
+                          </p>
+                        </div>
+                      ) : (
+                        messages.map((m) => {
+                          const mine =
+                            (role === "admin" && m.senderRole === "admin") ||
+                            (role === "user" && m.senderRole === "user");
+
+                          return (
+                            <article
+                              key={m._id}
+                              className={`td-message ${mine ? "is-mine" : "is-other"}`}
+                            >
+                              <div className="td-message-top">
+                                <span className="td-message-author">
+                                  {m.senderRole === "admin" ? "ADMIN" : "USUARIO"}
+                                  {m?.sender?.nombre
+                                    ? ` · ${m.sender.nombre} ${m.sender.apellido || ""}`
+                                    : ""}
+                                </span>
+
+                                <span className="td-message-date">{fmtDate(m.createdAt)}</span>
+                              </div>
+
+                              {m.text ? <div className="td-message-text">{m.text}</div> : null}
+
+                              <AttachmentLink fileUrl={m.fileUrl} fileName={m.fileName} />
+                            </article>
+                          );
+                        })
+                      )}
+                    </div>
+
+                    <form
+                      className={`td-composer ${isCanceled ? "is-disabled" : ""}`}
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        if (canSend) onSend();
+                      }}
+                    >
+                      <textarea
+                        className="td-textarea"
+                        rows={4}
+                        value={text}
+                        onChange={(e) => setText(e.target.value)}
+                        onKeyDown={onKeyDown}
+                        disabled={sending || isCanceled}
+                        placeholder={
+                          isCanceled
+                            ? "Este ticket está cancelado."
+                            : "Escribe tu mensaje aquí..."
+                        }
+                      />
+
+                      {file ? (
+                        <div className="td-file-selected">
+                          <span className="td-chip td-chip-success">Adjunto</span>
+                          <span className="td-chip td-chip-muted">
+                            {file.name} · {formatBytes(file.size)}
+                          </span>
+                        </div>
+                      ) : null}
+
+                      <div className="td-composer-actions">
+                        <input
+                          ref={fileRef}
+                          type="file"
+                          className="td-hidden-input"
+                          onChange={onPickFile}
                           disabled={sending || isCanceled}
                         />
 
-                        <div className="tkt-actions">
-                          <input
-                            ref={fileRef}
-                            type="file"
-                            className="tkt-file-hidden"
-                            onChange={onPickFile}
-                            disabled={sending || isCanceled}
-                          />
-
-                          <button
-                            className="dash-btn dash-btn-ghost"
-                            type="button"
-                            onClick={() => fileRef.current?.click()}
-                            disabled={sending || isCanceled}
-                          >
-                            Adjuntar
-                          </button>
-
-                          {file ? (
-                            <button
-                              className="dash-btn dash-btn-ghost"
-                              type="button"
-                              onClick={removeFile}
-                              disabled={sending || isCanceled}
-                            >
-                              Quitar
-                            </button>
-                          ) : null}
-
-                          <button className="dash-btn dash-btn-primary" type="submit" disabled={!canSend}>
-                            {sending ? "Enviando..." : "Enviar"}
-                          </button>
-                        </div>
+                        <button
+                          className="td-btn td-btn-secondary"
+                          type="button"
+                          onClick={() => fileRef.current?.click()}
+                          disabled={sending || isCanceled}
+                        >
+                          <HiOutlinePaperClip />
+                          <span>Adjuntar archivo</span>
+                        </button>
 
                         {file ? (
-                          <div className="tkt-file-meta">
-                            <span className="dash-pill dash-pill-ok">Adjunto</span>
-                            <span className="dash-pill dash-pill-muted">
-                              {file.name} · {formatBytes(file.size)}
-                            </span>
-                          </div>
+                          <button
+                            className="td-btn td-btn-secondary"
+                            type="button"
+                            onClick={removeFile}
+                            disabled={sending || isCanceled}
+                          >
+                            <HiOutlineXMark />
+                            <span>Quitar archivo</span>
+                          </button>
                         ) : null}
-                      </form>
-                    </div>
-                  </section>
-                </section>
-              </div>
-            )}
-          </section>
-        </main>
+
+                        <button
+                          className="td-btn td-btn-primary"
+                          type="submit"
+                          disabled={!canSend}
+                        >
+                          <HiOutlinePaperAirplane />
+                          <span>{sending ? "Enviando..." : "Enviar mensaje"}</span>
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </main>
+            </div>
+          )}
+        </section>
       </div>
     </div>
   );

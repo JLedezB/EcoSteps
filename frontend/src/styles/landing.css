@@ -1,9 +1,3 @@
-/* ============================
-   EcoSteps Landing (PRO)
-   - Modern, premium, readable
-   - No libs, pure CSS
-============================ */
-
 /* ---- Tokens ---- */
 :root {
   --bg-0: #f3f0ea;
@@ -66,29 +60,40 @@ body { margin: 0; }
 }
 
 /* ============================
-   Topbar
+   Topbar (SINGLE + FIXED)
 ============================ */
 .eco-topbar {
   position: sticky;
   top: 0;
   z-index: 60;
+
+  /* altura fija para evitar salto */
+  height: 72px;
+
+  /* ✅ glass oscuro estable (ya no deja ver blanco arriba) */
+  background: rgba(15, 37, 25, 0.88);
+
   backdrop-filter: blur(12px);
-  background: rgba(15, 37, 25, 0.55);
+  -webkit-backdrop-filter: blur(12px);
+
   border-bottom: 1px solid rgba(255,255,255,0.10);
+
   transition: background 180ms ease, box-shadow 180ms ease;
+  will-change: background, box-shadow;
 }
 
 .eco-topbar.is-compact {
-  background: rgba(15, 37, 25, 0.75);
-  box-shadow: 0 12px 30px rgba(0,0,0,0.20);
+  background: rgba(15, 37, 25, 0.95);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.22);
 }
 
 .eco-topbar-inner {
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  padding: 0.85rem 0;
+  padding: 0 1rem;
 }
 
 .eco-brand {
@@ -187,8 +192,9 @@ body { margin: 0; }
 .eco-drawer {
   display: none;
   border-top: 1px solid rgba(255,255,255,0.10);
-  background: rgba(15, 37, 25, 0.78);
+  background: rgba(15, 37, 25, 0.90);
   backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 .eco-drawer.is-open { display: block; }
 
@@ -317,14 +323,10 @@ button:focus-visible {
 }
 
 @media (max-width: 980px) {
-  .eco-hero-grid {
-    grid-template-columns: 1fr;
-  }
+  .eco-hero-grid { grid-template-columns: 1fr; }
 }
 
-.eco-hero-left {
-  color: #fff;
-}
+.eco-hero-left { color: #fff; }
 
 .eco-badge {
   display: inline-flex;
@@ -546,10 +548,7 @@ button:focus-visible {
   font-size: 0.85rem;
 }
 
-.eco-preview-list {
-  display: grid;
-  gap: 0.65rem;
-}
+.eco-preview-list { display: grid; gap: 0.65rem; }
 
 .eco-minirow {
   display: flex;
@@ -561,6 +560,8 @@ button:focus-visible {
   border: 1px solid rgba(0,0,0,0.08);
   background: #fff;
 }
+
+.eco-minirow-main { min-width: 0; }
 
 .eco-minirow-title {
   font-weight: 950;
@@ -575,9 +576,7 @@ button:focus-visible {
   flex-wrap: wrap;
 }
 
-.eco-minirow-cta {
-  font-weight: 950;
-}
+.eco-minirow-cta { font-weight: 950; }
 
 .eco-empty {
   border-radius: 16px;
@@ -606,9 +605,7 @@ button:focus-visible {
 /* ============================
    Sections
 ============================ */
-.eco-section {
-  padding: 1.7rem 0;
-}
+.eco-section { padding: 1.7rem 0; }
 
 .eco-section-alt {
   background: rgba(255,255,255,0.06);
@@ -616,9 +613,7 @@ button:focus-visible {
   border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 
-.eco-section-head {
-  margin-bottom: 1rem;
-}
+.eco-section-head { margin-bottom: 1rem; }
 
 .eco-h2 {
   margin: 0;
@@ -638,11 +633,7 @@ button:focus-visible {
 .eco-muted { color: var(--text-500); font-weight: 800; }
 
 /* grids */
-.eco-grid {
-  display: grid;
-  gap: 0.85rem;
-}
-
+.eco-grid { display: grid; gap: 0.85rem; }
 .eco-grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .eco-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .eco-grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -669,9 +660,7 @@ button:focus-visible {
 }
 
 /* Feature cards */
-.eco-card {
-  padding: 1.05rem;
-}
+.eco-card { padding: 1.05rem; }
 .eco-card-ic {
   width: 44px;
   height: 44px;
@@ -695,9 +684,7 @@ button:focus-visible {
 }
 
 /* Roles */
-.eco-role {
-  padding: 1.1rem;
-}
+.eco-role { padding: 1.1rem; }
 .eco-role.is-ok { border-color: rgba(74,158,74,0.22); }
 .eco-role.is-warn { border-color: rgba(201,168,76,0.25); }
 
@@ -772,10 +759,7 @@ button:focus-visible {
   background: rgba(74,158,74,0.14);
   border: 1px solid rgba(74,158,74,0.20);
 }
-.eco-step-title {
-  font-weight: 950;
-  color: var(--text-900);
-}
+.eco-step-title { font-weight: 950; color: var(--text-900); }
 .eco-step-desc {
   margin-top: 0.2rem;
   color: var(--text-500);
@@ -833,10 +817,7 @@ button:focus-visible {
 .eco-testimonial-role { color: var(--text-500); font-weight: 800; }
 
 /* FAQ */
-.eco-faq {
-  display: grid;
-  gap: 0.75rem;
-}
+.eco-faq { display: grid; gap: 0.75rem; }
 .eco-faq-item {
   text-align: left;
   width: 100%;
@@ -879,9 +860,7 @@ button:focus-visible {
   overflow: hidden;
   transition: max-height 220ms ease;
 }
-.eco-faq-item.is-open .eco-faq-a {
-  max-height: 160px;
-}
+.eco-faq-item.is-open .eco-faq-a { max-height: 160px; }
 
 /* Final CTA */
 .eco-final-cta {
@@ -1009,3 +988,13 @@ button:focus-visible {
   .eco-hover, .eco-btn, .eco-backtop { transition: none; }
 }
 
+/* ====== HARD OVERRIDE (si algo pisa el topbar) ====== */
+.eco-topbar {
+  background: rgba(15, 37, 25, 0.96) !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+}
+
+.eco-topbar-inner {
+  background: transparent !important;
+}

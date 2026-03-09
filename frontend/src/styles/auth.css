@@ -1,8 +1,5 @@
 /* =========================================
    EcoSteps Auth UI — PRO
-   - premium layout (side panel + card)
-   - accessible focus
-   - clean inputs & buttons
 ========================================= */
 
 :root {
@@ -179,18 +176,10 @@ body { margin: 0; }
   position: relative;
 }
 
-.auth-card-pro {
-  padding: 1.35rem;
-}
+.auth-card-pro { padding: 1.35rem; }
+@media (max-width: 420px) { .auth-card-pro { padding: 1.1rem; } }
 
-@media (max-width: 420px) {
-  .auth-card-pro { padding: 1.1rem; }
-}
-
-.auth-pop {
-  animation: authPop 420ms ease-out;
-}
-
+.auth-pop { animation: authPop 420ms ease-out; }
 @keyframes authPop {
   from { transform: translateY(10px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
@@ -245,10 +234,7 @@ body { margin: 0; }
   gap: 0.9rem;
 }
 
-.auth-field {
-  display: grid;
-  gap: 0.45rem;
-}
+.auth-field { display: grid; gap: 0.45rem; }
 
 .auth-label {
   font-size: 0.86rem;
@@ -261,6 +247,9 @@ body { margin: 0; }
   position: relative;
   display: flex;
   align-items: center;
+  gap: 10px;
+  padding-right: 10px;
+
   border-radius: 16px;
   border: 1px solid #e6e3db;
   background: #fff;
@@ -279,6 +268,7 @@ body { margin: 0; }
 }
 
 .auth-input-icon {
+  flex: 0 0 46px;
   width: 46px;
   display: grid;
   place-items: center;
@@ -291,36 +281,14 @@ body { margin: 0; }
   border: none;
   outline: none;
   background: transparent;
-  padding: 0.82rem 0.85rem 0.82rem 0.15rem;
+  padding: 0.82rem 0.15rem;
   font-size: 0.98rem;
   color: var(--text-900);
+  flex: 1 1 auto;
+  line-height: 1.2;
 }
 
-.auth-input::placeholder {
-  color: rgba(111, 114, 101, 0.75);
-}
-
-/* password eye */
-.auth-eye {
-  border: none;
-  background: transparent;
-  padding: 0 12px;
-  color: #7c806f;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.18rem;
-  cursor: pointer;
-}
-
-.auth-eye:hover { color: #111827; }
-
-/* error text */
-.auth-error {
-  color: #b91c1c;
-  font-size: 0.88rem;
-  font-weight: 700;
-}
+.auth-input::placeholder { color: rgba(111, 114, 101, 0.75); }
 
 /* row: error + link */
 .auth-row {
@@ -333,11 +301,18 @@ body { margin: 0; }
 
 .auth-mini-link {
   font-size: 0.88rem;
-  font-weight: 850;
+  font-weight: 900;
   color: #1f7a3d;
   text-decoration: none;
 }
 .auth-mini-link:hover { text-decoration: underline; }
+
+/* error text */
+.auth-error {
+  color: #b91c1c;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
 
 /* status alert */
 .auth-alert {
@@ -351,13 +326,49 @@ body { margin: 0; }
 }
 
 /* =========================================
+   Eye (square PRO)
+========================================= */
+.auth-eye {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  border: 1px solid rgba(0,0,0,0.10);
+  background: rgba(255,255,255,0.92);
+  color: var(--text-700);
+  cursor: pointer;
+  box-shadow: 0 10px 18px rgba(0,0,0,0.06);
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease, background 140ms ease;
+  flex: 0 0 auto;
+}
+
+.auth-eye:hover {
+  transform: translateY(-1px);
+  border-color: rgba(74,158,74,0.22);
+  box-shadow: 0 14px 26px rgba(0,0,0,0.10);
+  background: rgba(74,158,74,0.06);
+}
+
+.auth-eye:active { transform: translateY(0); }
+
+.auth-eye svg { width: 22px; height: 22px; display: block; }
+
+.auth-input-wrap:focus-within .auth-eye { border-color: rgba(74,158,74,0.28); }
+
+@media (max-width: 420px) {
+  .auth-eye { width: 40px; height: 40px; border-radius: 12px; }
+  .auth-eye svg { width: 20px; height: 20px; }
+}
+
+/* =========================================
    Buttons
 ========================================= */
 .auth-btn {
   width: 100%;
   border: none;
   border-radius: 16px;
-  padding: 0.85rem 1rem;
+  padding: 0.90rem 1rem;
   font-weight: 950;
   letter-spacing: -0.1px;
   cursor: pointer;
@@ -365,12 +376,12 @@ body { margin: 0; }
   align-items: center;
   justify-content: center;
   gap: 0.55rem;
-  transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease, background 140ms ease;
+  transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease, background 140ms ease, border-color 140ms ease;
   user-select: none;
 }
 
 .auth-btn:disabled {
-  opacity: 0.75;
+  opacity: 0.68;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
@@ -381,7 +392,6 @@ body { margin: 0; }
   color: #fff;
   box-shadow: 0 12px 22px rgba(45,106,45,0.20);
 }
-
 .auth-btn-primary:hover {
   transform: translateY(-1px);
   box-shadow: 0 16px 32px rgba(45,106,45,0.28);
@@ -389,24 +399,20 @@ body { margin: 0; }
 }
 
 .auth-btn-google {
-  background: #fff;
-  border: 1px solid rgba(0,0,0,0.10);
+  background: rgba(255,255,255,0.92);
   color: var(--text-700);
+  border: 1px solid rgba(0,0,0,0.10);
   box-shadow: var(--shadow-soft);
 }
-
 .auth-btn-google:hover {
   transform: translateY(-1px);
   box-shadow: 0 16px 32px rgba(0,0,0,0.10);
   border-color: rgba(0,0,0,0.14);
+  background: #fff;
 }
 
 /* spinner */
-.auth-btn-loading {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.55rem;
-}
+.auth-btn-loading { display: inline-flex; align-items: center; gap: 0.55rem; }
 
 .auth-spinner {
   width: 16px;
@@ -416,20 +422,20 @@ body { margin: 0; }
   border-top-color: rgba(255,255,255,0.95);
   animation: spin 0.8s linear infinite;
 }
+@keyframes spin { to { transform: rotate(360deg); } }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* divider */
+/* =========================================
+   Divider (PRO)
+========================================= */
 .auth-divider {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0.2rem 0 0.1rem;
-  color: rgba(111, 114, 101, 0.95);
-  font-size: 0.86rem;
-  font-weight: 850;
+  gap: 12px;
+  margin: 0.15rem 0 0.25rem;
+
+  list-style: none;
+  padding: 0;
 }
 
 .auth-divider::before,
@@ -441,10 +447,166 @@ body { margin: 0; }
 }
 
 .auth-divider span {
-  padding: 0 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(0,0,0,0.08);
+  background: rgba(255,255,255,0.70);
+  font-size: 0.86rem;
+  font-weight: 950;
+  color: rgba(111,114,101,0.95);
+  text-indent: 0;
 }
 
-/* bottom links */
+/* =========================================
+   Password checklist (PRO) — FIX REAL
+   - arregla iconos y separación (sin “@”)
+========================================= */
+.pwd-box {
+  margin-top: 0.55rem;
+  padding: 0.75rem 0.75rem;
+  border-radius: 16px;
+  border: 1px solid rgba(0,0,0,0.06);
+  background: rgba(15, 37, 25, 0.03);
+}
+
+.pwd-top {
+  display: grid;
+  gap: 0.45rem;
+  margin-bottom: 0.6rem;
+}
+
+.pwd-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  font-weight: 950;
+  letter-spacing: -0.2px;
+  color: var(--text-700);
+  font-size: 0.9rem;
+}
+
+.pwd-state {
+  font-weight: 950;
+  font-size: 0.78rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid rgba(0,0,0,0.08);
+  background: rgba(255,255,255,0.7);
+  white-space: nowrap;
+}
+
+.pwd-state.ok {
+  border-color: rgba(45,106,45,0.25);
+  background: rgba(74,158,74,0.10);
+  color: #1f7a3d;
+}
+
+.pwd-state.warn {
+  border-color: rgba(201,168,76,0.30);
+  background: rgba(201,168,76,0.12);
+  color: #8a6b16;
+}
+
+.pwd-meter {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.08);
+  overflow: hidden;
+}
+
+.pwd-meter-bar {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(135deg, var(--green-500), var(--green-700));
+  border-radius: 999px;
+  transition: width 160ms ease;
+}
+
+.pwd-meter-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  font-size: 0.82rem;
+  color: var(--text-500);
+  font-weight: 800;
+}
+
+.pwd-badge {
+  padding: 0.22rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid rgba(0,0,0,0.08);
+  background: rgba(255,255,255,0.7);
+  white-space: nowrap;
+}
+.pwd-badge.low { color: #7a2e2e; background: rgba(239,68,68,0.10); border-color: rgba(239,68,68,0.22); }
+.pwd-badge.mid { color: #8a6b16; background: rgba(201,168,76,0.12); border-color: rgba(201,168,76,0.30); }
+.pwd-badge.ok  { color: #1f7a3d; background: rgba(74,158,74,0.10); border-color: rgba(45,106,45,0.25); }
+
+.pwd-reqs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+/* ✅ FIX: pills PRO + iconos react-icons alineados */
+.pwd-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.38rem 0.60rem;
+  border-radius: 999px;
+  border: 1px solid rgba(0,0,0,0.08);
+  background: rgba(255,255,255,0.85);
+  font-size: 0.82rem;
+  font-weight: 850;
+  color: var(--text-700);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.pwd-pill-ic {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+}
+
+/* 🔥 lo que arregla el “@”/glifos raros: forzar svg size */
+.pwd-pill-ic svg {
+  width: 18px !important;
+  height: 18px !important;
+  display: block;
+}
+
+.pwd-pill-tx {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1.1;
+}
+
+.pwd-pill.is-ok {
+  border-color: rgba(45,106,45,0.22);
+  background: rgba(74,158,74,0.10);
+  color: #1f7a3d;
+}
+
+.pwd-pill.is-bad {
+  border-color: rgba(0,0,0,0.10);
+  background: rgba(255,255,255,0.75);
+  color: rgba(59,61,51,0.78);
+}
+
+/* links abajo */
 .auth-link {
   text-align: center;
   margin-top: 0.35rem;
@@ -457,7 +619,6 @@ body { margin: 0; }
 }
 .auth-link a:hover { text-decoration: underline; }
 
-/* footer note */
 .auth-footer-note {
   text-align: center;
   color: var(--text-500);

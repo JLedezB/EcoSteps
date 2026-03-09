@@ -1,15 +1,58 @@
-import { useCallback, useEffect, useMemo, useState, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  HiOutlineSquares2X2,
+  HiOutlineDocumentText,
+  HiOutlineArrowPath,
+  HiOutlineArrowLeft,
+  HiOutlineEye,
+  HiOutlineCheckCircle,
+  HiOutlineXCircle,
+  HiOutlineClock,
+  HiOutlineCalendarDays,
+  HiOutlineClipboardDocumentList,
+} from "react-icons/hi2";
+import { FaLeaf } from "react-icons/fa";
+
 import { getPendingReports, updateReportStatus } from "../services/reportService";
-import "../styles/dashboard.css";
+import "../styles/adminreportsreview.css";
 
 function fmtDate(d) {
   if (!d) return "—";
   try {
-    return new Date(d).toLocaleString();
+    return new Date(d).toLocaleString("es-MX", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
   } catch {
     return "—";
   }
+}
+
+function StatCard({ title, value, hint }) {
+  return (
+    <article className="reports-stat-card">
+      <div className="reports-stat-title">{title}</div>
+      <div className="reports-stat-value">{value}</div>
+      <div className="reports-stat-hint">{hint}</div>
+    </article>
+  );
+}
+
+function SidebarItem({ icon, label, active = false, onClick, disabled = false }) {
+  return (
+    <button
+      type="button"
+      className={`reports-nav-item ${active ? "is-active" : ""}`}
+      onClick={onClick}
+      disabled={disabled}
+    >
+      <span className="reports-nav-icon" aria-hidden="true">
+        {icon}
+      </span>
+      <span>{label}</span>
+    </button>
+  );
 }
 
 export default function AdminReportsReview() {
@@ -41,16 +84,18 @@ export default function AdminReportsReview() {
   }, [load]);
 
   const setReportStatus = useCallback(
-    async (id, s) => {
+    async (id, status) => {
       try {
         setAlert(null);
         setBusyId(id);
 
-        const res = await updateReportStatus(id, s);
-        setAlert({ type: "success", text: res?.message || "Estado actualizado" });
+        const res = await updateReportStatus(id, status);
+        setAlert({ type: "success", text: res?.message || "Estado actualizado correctamente" });
 
         await load();
-        queueMicrotask(() => listRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+        queueMicrotask(() =>
+          listRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+        );
       } catch (e) {
         setAlert({ type: "danger", text: e?.message || "Error al actualizar reporte" });
       } finally {
@@ -61,167 +106,223 @@ export default function AdminReportsReview() {
   );
 
   return (
-    <div className="dashboard-container">
-      <div className="eco-shell">
-        <aside className="eco-sidebar" aria-label="Navegación admin">
-          <div className="eco-sidebar-head">
-            <span aria-hidden="true">🛡️</span>
-            <div className="eco-sidebar-brand">EcoSteps SGSS</div>
+    <div className="reports-page">
+      <div className="reports-shell">
+        {/* Sidebar */}
+        <aside className="reports-sidebar" aria-label="Navegación admin reportes">
+          <div className="reports-sidebar-head">
+            <div className="reports-brand-mark">
+              <FaLeaf />
+            </div>
+
+            <div className="reports-brand-copy">
+              <div className="reports-sidebar-brand">EcoSteps SGSS</div>
+              <div className="reports-sidebar-subbrand">Administración</div>
+            </div>
           </div>
 
-          <nav className="eco-sidebar-nav">
-            <button
-              type="button"
-              className="eco-nav-item"
+          <nav className="reports-sidebar-nav">
+            <SidebarItem
+              icon={<HiOutlineSquares2X2 />}
+              label="Dashboard"
               onClick={() => navigate("/admin")}
               disabled={loading || !!busyId}
-            >
-              <span aria-hidden="true">▦</span> Dashboard
-            </button>
+            />
 
-            <button
-              type="button"
-              className="eco-nav-item is-active"
+            <SidebarItem
+              icon={<HiOutlineDocumentText />}
+              label="Reportes"
+              active
               onClick={() => navigate("/admin/reports")}
               disabled={loading || !!busyId}
-            >
-              <span aria-hidden="true">📄</span> Reportes
-            </button>
+            />
           </nav>
 
-          <div className="eco-sidebar-foot">
-            <div className="eco-level-card">
-              <div className="eco-level-label">Módulo</div>
-              <div className="eco-level-name">Reportes</div>
-              <div className="eco-level-sub">Revisión bimestral</div>
+          <div className="reports-sidebar-foot">
+            <div className="reports-module-card">
+              <div className="reports-module-label">Módulo</div>
+              <div className="reports-module-title">Reportes</div>
+              <div className="reports-module-subtitle">Revisión bimestral</div>
             </div>
 
-            <div className="mt-3 d-grid gap-2">
-              <button
-                className="btn btn-outline-secondary btn-sm"
-                onClick={() => navigate("/admin")}
-                type="button"
-                disabled={loading || !!busyId}
-              >
-                Volver al panel
-              </button>
-            </div>
+            <button
+              className="reports-back-btn"
+              onClick={() => navigate("/admin")}
+              type="button"
+              disabled={loading || !!busyId}
+            >
+              <HiOutlineArrowLeft />
+              Volver al panel
+            </button>
           </div>
         </aside>
 
-        <main className="eco-main" aria-label="Contenido admin reportes">
-          <div className="eco-main-card">
-            <div className="eco-topbar">
-              <div>
-                <h2 className="eco-greet-title mb-0">Reportes bimestrales</h2>
-                <p className="eco-greet-sub mb-0">Pendientes por revisión del administrador.</p>
+        {/* Main */}
+        <main className="reports-main" aria-label="Contenido admin reportes">
+          <div className="reports-main-card">
+            {/* Hero */}
+            <section className="reports-hero">
+              <div className="reports-hero-copy">
+                <div className="reports-hero-eyebrow">Gestión administrativa</div>
+                <h1 className="reports-hero-title">Reportes bimestrales</h1>
+                <p className="reports-hero-subtitle">
+                  Revisa los reportes pendientes enviados por los usuarios, valida sus horas y
+                  aprueba o rechaza cada entrega.
+                </p>
               </div>
 
-              <div className="eco-topbar-right d-flex gap-2 flex-wrap">
+              <div className="reports-hero-actions">
                 <button
-                  className="btn btn-eco-ghost btn-sm"
+                  className="btn btn-light reports-ghost-btn"
                   onClick={load}
                   type="button"
                   disabled={loading || !!busyId}
                   title="Actualizar lista"
                 >
+                  <HiOutlineArrowPath />
                   {loading ? "Cargando..." : "Refrescar"}
                 </button>
 
                 <button
-                  className="btn btn-outline-secondary btn-sm"
+                  className="btn btn-light reports-ghost-btn"
                   onClick={() => navigate("/admin")}
                   type="button"
                   disabled={loading || !!busyId}
                 >
+                  <HiOutlineArrowLeft />
                   Volver
                 </button>
               </div>
-            </div>
+            </section>
 
-            {alert?.text && <div className={`alert alert-${alert.type} py-2`}>{alert.text}</div>}
+            {/* Alert */}
+            {alert?.text && <div className={`alert alert-${alert.type} reports-alert`}>{alert.text}</div>}
 
-            <div className="eco-kpis mb-3" style={{ gridTemplateColumns: "repeat(1, minmax(0, 1fr))" }}>
-              <div className="eco-kpi">
-                <div className="eco-kpi-title">Pendientes</div>
-                <div className="eco-kpi-value">{pendingCount}</div>
-                <div className="eco-kpi-hint">Reportes por revisar</div>
+            {/* Stats */}
+            <section className="reports-stats-grid">
+              <StatCard title="Pendientes" value={pendingCount} hint="Reportes por revisar" />
+            </section>
+
+            {/* List */}
+            <section className="reports-section" ref={listRef}>
+              <div className="reports-section-head">
+                <div>
+                  <div className="reports-section-eyebrow">Listado</div>
+                  <h2 className="reports-section-title">Reportes pendientes</h2>
+                  <p className="reports-section-subtitle">
+                    Aquí aparecerán los reportes enviados para revisión administrativa.
+                  </p>
+                </div>
               </div>
-            </div>
 
-            <div ref={listRef}>
               {loading ? (
-                <div className="py-4 text-center text-muted">Cargando reportes...</div>
+                <div className="reports-empty-card">
+                  <div className="reports-empty-title">Cargando reportes...</div>
+                  <div className="reports-empty-subtitle">Espera un momento mientras se actualiza la lista.</div>
+                </div>
               ) : reports.length === 0 ? (
-                <div className="card-soft p-3">
-                  <div className="fw-semibold">No hay reportes pendientes</div>
-                  <div className="text-muted small">Cuando un usuario suba un reporte, aparecerá aquí.</div>
+                <div className="reports-empty-card">
+                  <div className="reports-empty-title">No hay reportes pendientes</div>
+                  <div className="reports-empty-subtitle">
+                    Cuando un usuario suba un reporte, aparecerá aquí para su revisión.
+                  </div>
                 </div>
               ) : (
-                <div className="activity-list">
+                <div className="reports-list">
                   {reports.map((r) => {
                     const isBusy = busyId === r._id;
 
                     return (
-                      <div key={r._id} className="activity-card">
-                        <div className="d-flex justify-content-between align-items-start gap-2">
-                          <div>
-                            <div className="activity-title">
-                              {r.user?.nombre || "Usuario"} {r.user?.apellido || ""}
+                      <article key={r._id} className="report-card">
+                        <div className="report-card-top">
+                          <div className="report-user-block">
+                            <div className="report-user-avatar">
+                              {(r.user?.nombre?.[0] || "U").toUpperCase()}
                             </div>
-                            <div className="text-muted small">{r.user?.email || "sin email"}</div>
+
+                            <div>
+                              <h3 className="report-user-name">
+                                {r.user?.nombre || "Usuario"} {r.user?.apellido || ""}
+                              </h3>
+                              <p className="report-user-email">{r.user?.email || "Sin correo registrado"}</p>
+                            </div>
                           </div>
 
-                          <span className="eco-chip eco-chip-muted">PENDIENTE</span>
+                          <span className="report-badge report-badge-pending">
+                            <HiOutlineClock />
+                            Pendiente
+                          </span>
                         </div>
 
-                        <div className="activity-meta mt-2">
-                          <div>
-                            <strong>Bimestre:</strong> {r.bimestre}
+                        <div className="report-meta-grid">
+                          <div className="report-meta-card">
+                            <div className="report-meta-label">
+                              <HiOutlineClipboardDocumentList />
+                              Bimestre
+                            </div>
+                            <div className="report-meta-value">{r.bimestre || "—"}</div>
                           </div>
-                          <div>
-                            <strong>Horas:</strong> {r.hours}
+
+                          <div className="report-meta-card">
+                            <div className="report-meta-label">
+                              <HiOutlineCheckCircle />
+                              Horas
+                            </div>
+                            <div className="report-meta-value">{r.hours ?? "—"}</div>
                           </div>
-                          <div>
-                            <strong>Fecha:</strong> {fmtDate(r.createdAt)}
+
+                          <div className="report-meta-card">
+                            <div className="report-meta-label">
+                              <HiOutlineCalendarDays />
+                              Fecha de envío
+                            </div>
+                            <div className="report-meta-value">{fmtDate(r.createdAt)}</div>
                           </div>
                         </div>
 
-                        <div className="d-flex gap-2 align-items-center flex-wrap mt-3">
-                          <a className="eco-attach" href={r.fileUrl} target="_blank" rel="noreferrer">
+                        <div className="report-card-bottom">
+                          <a
+                            className="report-file-link"
+                            href={r.fileUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            <HiOutlineEye />
                             Ver archivo
                           </a>
 
-                          <button
-                            className="btn btn-success btn-sm ms-auto"
-                            onClick={() => setReportStatus(r._id, "approved")}
-                            type="button"
-                            disabled={isBusy}
-                          >
-                            {isBusy ? "..." : "Aprobar"}
-                          </button>
+                          <div className="report-actions">
+                            <button
+                              className="btn btn-success btn-sm report-approve-btn"
+                              onClick={() => setReportStatus(r._id, "approved")}
+                              type="button"
+                              disabled={isBusy}
+                            >
+                              <HiOutlineCheckCircle />
+                              {isBusy ? "Procesando..." : "Aprobar"}
+                            </button>
 
-                          <button
-                            className="btn btn-danger btn-sm"
-                            onClick={() => setReportStatus(r._id, "rejected")}
-                            type="button"
-                            disabled={isBusy}
-                          >
-                            {isBusy ? "..." : "Rechazar"}
-                          </button>
+                            <button
+                              className="btn btn-danger btn-sm report-reject-btn"
+                              onClick={() => setReportStatus(r._id, "rejected")}
+                              type="button"
+                              disabled={isBusy}
+                            >
+                              <HiOutlineXCircle />
+                              {isBusy ? "Procesando..." : "Rechazar"}
+                            </button>
+                          </div>
                         </div>
 
-                        <div className="small text-muted mt-2">
-                          Al aprobar, se suman las horas correspondientes al usuario.
+                        <div className="report-note">
+                          Al aprobar, se suman automáticamente las horas correspondientes al usuario.
                         </div>
-                      </div>
+                      </article>
                     );
                   })}
                 </div>
               )}
-            </div>
-
-            <div style={{ height: 8 }} />
+            </section>
           </div>
         </main>
       </div>
