@@ -12,11 +12,13 @@ import {
   HiOutlineChevronUp,
   HiOutlineArrowRight,
   HiOutlineHome,
+  HiOutlinePaperAirplane,
 } from "react-icons/hi2";
 import { FaLeaf } from "react-icons/fa";
 
 import LogoutButton from "../components/LogoutButton";
 import { AuthContext } from "../context/AuthContext";
+import { askEcoBot, createTicketFromEcoBot } from "../services/ecobotService";
 
 import "../styles/helpchatbot.css";
 
@@ -33,7 +35,7 @@ const ROUTES = {
 const FLOW = {
   start: {
     title: "Menú",
-    text: "Hola. Soy EcoBot.\n\n¿En qué te puedo ayudar hoy?\nElige una opción:",
+    text: "Hola. Soy EcoBot.\n\n¿En qué te puedo ayudar hoy?\nElige una opción o escríbeme una pregunta:",
     options: [
       { label: "Empezar / ¿Qué es EcoSteps?", next: "about", group: "General" },
       { label: "Inscribirme a una actividad", next: "join_activity", group: "Actividades" },
@@ -537,16 +539,26 @@ export default function HelpChatbot() {
 
   const [messages, setMessages] = useState(() => [makeMsg("bot", FLOW.start.text)]);
   const [query, setQuery] = useState("");
+  const [freeQuestion, setFreeQuestion] = useState("");
+  const [isAskingAI, setIsAskingAI] = useState(false);
+  const [isCreatingTicket, setIsCreatingTicket] = useState(false);
+  const [lastQuestionForTicket, setLastQuestionForTicket] = useState("");
+  const [showCreateTicketBtn, setShowCreateTicketBtn] = useState(false);
 
   const options = useMemo(() => node?.options || [], [node]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length]);
+  }, [messages.length, isAskingAI, isCreatingTicket]);
 
   const reset = useCallback(() => {
     setNodeId("start");
     setQuery("");
+    setFreeQuestion("");
+    setIsAskingAI(false);
+    setIsCreatingTicket(false);
+    setLastQuestionForTicket("");
+    setShowCreateTicketBtn(false);
     setMessages([makeMsg("bot", FLOW.start.text)]);
   }, []);
 
@@ -579,6 +591,98 @@ export default function HelpChatbot() {
     [goTickets]
   );
 
+  const handleAskAI = useCallback(async () => {
+    const text = freeQuestion.trim();
+    if (!text || isAskingAI) return;
+
+    setMessages((prev) => [...prev, makeMsg("user", text)]);
+    setFreeQuestion("");
+    setIsAskingAI(true);
+    setLastQuestionForTicket(text);
+    setShowCreateTicketBtn(false);
+
+    try {
+      const data = await askEcoBot(text);
+
+      setMessages((prev) => [
+        ...prev,
+        makeMsg("bot", data?.answer || "No pude responder en este momento."),
+      ]);
+
+      const lower = text.toLowerCase();
+      const shouldOfferTicket =
+        data?.canCreateTicket &&
+        (
+          lower.includes("problema") ||
+          lower.includes("error") ||
+          lower.includes("no puedo") ||
+          lower.includes("no me deja") ||
+          lower.includes("no aparece") ||
+          lower.includes("falla") ||
+          lower.includes("rechazada") ||
+          lower.includes("ticket") ||
+          lower.includes("soporte")
+        );
+
+      setShowCreateTicketBtn(Boolean(shouldOfferTicket));
+    } catch (error) {
+      setMessages((prev) => [
+        ...prev,
+        makeMsg(
+          "bot",
+          error?.message || "Ocurrió un error al consultar EcoBot. Intenta nuevamente."
+        ),
+      ]);
+      setShowCreateTicketBtn(true);
+    } finally {
+      setIsAskingAI(false);
+    }
+  }, [freeQuestion, isAskingAI]);
+
+  const handleCreateTicketFromBot = useCallback(async () => {
+    const baseMessage = lastQuestionForTicket.trim();
+    if (!baseMessage || isCreatingTicket) return;
+
+    try {
+      setIsCreatingTicket(true);
+
+      const res = await createTicketFromEcoBot({
+        subject: `Soporte EcoBot: ${baseMessage}`.slice(0, 120),
+        message: `Ticket generado desde EcoBot.\n\nProblema reportado por el usuario:\n${baseMessage}`,
+      });
+
+      setMessages((prev) => [
+        ...prev,
+        makeMsg(
+          "bot",
+          `Listo. Ya creé tu ticket: "${res?.ticket?.subject || "Soporte EcoBot"}". Puedes revisarlo en Mis Tickets.`
+        ),
+      ]);
+
+      setShowCreateTicketBtn(false);
+    } catch (error) {
+      setMessages((prev) => [
+        ...prev,
+        makeMsg(
+          "bot",
+          error?.message || "No pude crear el ticket en este momento."
+        ),
+      ]);
+    } finally {
+      setIsCreatingTicket(false);
+    }
+  }, [lastQuestionForTicket, isCreatingTicket]);
+
+  const onQuestionKeyDown = useCallback(
+    (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        handleAskAI();
+      }
+    },
+    [handleAskAI]
+  );
+
   return (
     <div className="ecb-page">
       <div className="ecb-shell">
@@ -597,7 +701,7 @@ export default function HelpChatbot() {
               <span className="ecb-kicker">ASISTENTE DE AYUDA</span>
               <h1 className="ecb-hero-title">{BOT_NAME}</h1>
               <p className="ecb-hero-text">
-                Guía rápida del sistema para actividades, evidencias, reportes y tickets.
+                Guía rápida del sistema para actividades, evidencias, reportes, tickets y preguntas en lenguaje natural con modelo local.
               </p>
 
               <div className="ecb-hero-actions">
@@ -624,7 +728,7 @@ export default function HelpChatbot() {
               <div className="ecb-card-head">
                 <div>
                   <h2 className="ecb-card-title">Chat de ayuda</h2>
-                  <p className="ecb-card-subtitle">Selecciona una opción para continuar</p>
+                  <p className="ecb-card-subtitle">Usa las opciones o escribe tu pregunta</p>
                 </div>
 
                 <div className="ecb-inline-actions">
@@ -640,7 +744,64 @@ export default function HelpChatbot() {
                   {messages.map((m) => (
                     <ChatBubble key={m.id} botName={BOT_NAME} msg={m} />
                   ))}
+
+                  {isAskingAI ? (
+                    <div className="ecb-msg is-bot">
+                      <div className="ecb-msg-meta">
+                        <span className="ecb-msg-who">{BOT_NAME}</span>
+                        <span className="ecb-msg-time">{nowTime()}</span>
+                      </div>
+                      <div className="ecb-msg-text">Pensando...</div>
+                    </div>
+                  ) : null}
+
+                  {isCreatingTicket ? (
+                    <div className="ecb-msg is-bot">
+                      <div className="ecb-msg-meta">
+                        <span className="ecb-msg-who">{BOT_NAME}</span>
+                        <span className="ecb-msg-time">{nowTime()}</span>
+                      </div>
+                      <div className="ecb-msg-text">Creando ticket...</div>
+                    </div>
+                  ) : null}
+
                   <div ref={endRef} />
+                </div>
+
+                <div className="ecb-ai-box">
+                  <textarea
+                    className="ecb-ai-input"
+                    placeholder="Escribe tu duda sobre EcoSteps... Ej: no me aparece el botón para subir evidencia"
+                    value={freeQuestion}
+                    onChange={(e) => setFreeQuestion(e.target.value)}
+                    onKeyDown={onQuestionKeyDown}
+                    rows={3}
+                    disabled={isAskingAI || isCreatingTicket}
+                  />
+
+                  <div className="ecb-ai-actions">
+                    <button
+                      type="button"
+                      className="ecb-btn ecb-btn-primary"
+                      onClick={handleAskAI}
+                      disabled={isAskingAI || isCreatingTicket || !freeQuestion.trim()}
+                    >
+                      <HiOutlinePaperAirplane />
+                      <span>{isAskingAI ? "Consultando..." : "Preguntar a EcoBot"}</span>
+                    </button>
+
+                    {showCreateTicketBtn ? (
+                      <button
+                        type="button"
+                        className="ecb-btn ecb-btn-secondary"
+                        onClick={handleCreateTicketFromBot}
+                        disabled={isCreatingTicket}
+                      >
+                        <HiOutlineTicket />
+                        <span>{isCreatingTicket ? "Creando ticket..." : "Crear ticket con esto"}</span>
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
               </div>
             </section>
@@ -665,7 +826,7 @@ export default function HelpChatbot() {
 
                 <div className="ecb-card-body">
                   <p className="ecb-side-text">
-                    Puedes navegar por categorías o buscar palabras clave para encontrar la guía adecuada más rápido.
+                    Puedes navegar por categorías o escribir una pregunta libre sobre EcoSteps para que EcoBot te responda.
                   </p>
                 </div>
               </div>
