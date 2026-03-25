@@ -7,12 +7,10 @@ import {
   HiOutlineSparkles,
   HiOutlineArrowPath,
   HiOutlineMagnifyingGlass,
-  HiOutlineQuestionMarkCircle,
-  HiOutlineChevronDown,
-  HiOutlineChevronUp,
-  HiOutlineArrowRight,
-  HiOutlineHome,
   HiOutlinePaperAirplane,
+  HiOutlineCpuChip,
+  HiOutlineBolt,
+  HiOutlineCheckBadge,
 } from "react-icons/hi2";
 import { FaLeaf } from "react-icons/fa";
 
@@ -35,13 +33,14 @@ const ROUTES = {
 const FLOW = {
   start: {
     title: "Menú",
-    text: "Hola. Soy EcoBot.\n\n¿En qué te puedo ayudar hoy?\nElige una opción o escríbeme una pregunta:",
+    text: "Hola. Soy EcoBot.\n\n¿En qué te puedo ayudar hoy?\nElige una opción numerada:",
     options: [
-      { label: "Empezar / ¿Qué es EcoSteps?", next: "about", group: "General" },
+      { label: "¿Qué es EcoSteps?", next: "about", group: "General" },
       { label: "Inscribirme a una actividad", next: "join_activity", group: "Actividades" },
       { label: "Subir evidencia", next: "upload_evidence", group: "Evidencias" },
       { label: "Subir reporte bimestral", next: "upload_report", group: "Reportes" },
       { label: "Tickets / soporte", next: "tickets_help", group: "Soporte" },
+      { label: "Mi servicio social", next: "about", group: "General" },
     ],
   },
 
@@ -49,11 +48,12 @@ const FLOW = {
     title: "General",
     text:
       "EcoSteps es una plataforma para gestionar Servicio Social.\n\n" +
-      "Incluye:\n" +
-      "• Actividades (inscripción y cupos)\n" +
-      "• Evidencias (subida y revisión)\n" +
-      "• Reportes bimestrales (subida y aprobación)\n" +
-      "• Tickets (soporte y seguimiento)",
+      "Te permite:\n" +
+      "• Registrar actividades\n" +
+      "• Subir evidencias\n" +
+      "• Enviar reportes bimestrales\n" +
+      "• Crear tickets de soporte\n" +
+      "• Dar seguimiento a tus horas",
     options: [
       { label: "Menú principal", next: "start", group: "Navegación" },
       { label: "Ir a Tickets", next: "cta_ticket", group: "Acción" },
@@ -65,9 +65,9 @@ const FLOW = {
     text:
       "Para inscribirte:\n" +
       "1) Entra a tu Dashboard.\n" +
-      "2) En la pestaña 'Todas', busca la actividad.\n" +
+      "2) Busca la actividad.\n" +
       "3) Presiona 'Inscribirme'.\n\n" +
-      "Tip: si no te deja, puede ser por cupo o porque ya estás inscrito.",
+      "Si no te deja, puede ser por cupo, actividad cerrada o porque ya estás inscrito.",
     options: [
       { label: "No hay cupo", next: "join_no_cupo", group: "Problemas comunes" },
       { label: "No puedo inscribirme", next: "join_cant", group: "Problemas comunes" },
@@ -81,7 +81,8 @@ const FLOW = {
       "Si el cupo disponible está en 0, el sistema bloquea la inscripción.\n\n" +
       "Recomendación:\n" +
       "• Revisar otra actividad\n" +
-      "• Esperar a que se libere un cupo",
+      "• Esperar a que se libere un cupo\n" +
+      "• Crear ticket si parece un error",
     options: [
       { label: "Crear ticket por cupo", next: "cta_ticket", group: "Acción" },
       { label: "Volver a Actividades", next: "join_activity", group: "Navegación" },
@@ -95,8 +96,7 @@ const FLOW = {
       "Si no te deja inscribirte, normalmente es por:\n" +
       "• Cupo en 0\n" +
       "• Ya estás inscrito\n" +
-      "• Actividad cerrada\n\n" +
-      "Si quieres, crea un ticket y lo revisa el admin.",
+      "• Actividad cerrada",
     options: [
       { label: "Crear ticket", next: "cta_ticket", group: "Acción" },
       { label: "Menú principal", next: "start", group: "Navegación" },
@@ -107,10 +107,10 @@ const FLOW = {
     title: "Evidencias",
     text:
       "Para subir evidencia:\n" +
-      "1) En Dashboard cambia a 'Mis actividades'.\n" +
+      "1) Entra a 'Mis actividades'.\n" +
       "2) Busca la actividad.\n" +
       "3) Presiona 'Subir evidencia'.\n\n" +
-      "Nota: si ya está aprobada, el botón se deshabilita (actividad completada).",
+      "Si la evidencia ya fue aprobada, el botón puede deshabilitarse.",
     options: [
       { label: "Mi evidencia fue rechazada", next: "evidence_rejected", group: "Problemas comunes" },
       { label: "No aparece el botón", next: "evidence_missing_btn", group: "Problemas comunes" },
@@ -124,8 +124,8 @@ const FLOW = {
     text:
       "Para ver el estado:\n" +
       "1) Entra a 'Mis actividades'.\n" +
-      "2) Revisa la sección de evidencias por actividad.\n" +
-      "3) Verás el estado (pendiente / aprobada / rechazada).",
+      "2) Revisa la evidencia de tu actividad.\n" +
+      "3) Verás si está pendiente, aprobada o rechazada.",
     options: [
       { label: "Volver a Evidencias", next: "upload_evidence", group: "Navegación" },
       { label: "Menú principal", next: "start", group: "Navegación" },
@@ -136,9 +136,9 @@ const FLOW = {
     title: "Evidencias",
     text:
       "Si fue rechazada:\n" +
-      "• Revisa el comentario del admin (si tu UI lo muestra)\n" +
-      "• Vuelve a subir una evidencia más clara\n" +
-      "• Asegúrate de que se vea la actividad/evidencia correcta",
+      "• Revisa las observaciones del admin\n" +
+      "• Sube una evidencia más clara\n" +
+      "• Asegúrate de que corresponde a la actividad correcta",
     options: [
       { label: "Crear ticket", next: "cta_ticket", group: "Acción" },
       { label: "Volver a Evidencias", next: "upload_evidence", group: "Navegación" },
@@ -163,10 +163,10 @@ const FLOW = {
     title: "Reportes",
     text:
       "Para subir tu reporte bimestral:\n" +
-      "1) En Dashboard presiona 'Subir reporte'.\n" +
+      "1) Entra a 'Subir reporte'.\n" +
       "2) Adjunta el archivo.\n" +
       "3) Envía.\n\n" +
-      "Cuando el admin lo apruebe, se te suma progreso.",
+      "Cuando el admin lo apruebe, se actualiza tu progreso.",
     options: [
       { label: "No me deja subir", next: "report_issue", group: "Problemas comunes" },
       { label: "¿Dónde veo si lo aprobaron?", next: "report_status", group: "Guía" },
@@ -177,9 +177,10 @@ const FLOW = {
   report_status: {
     title: "Reportes",
     text:
-      "Para ver si aprobaron tu reporte:\n" +
-      "• En el Dashboard revisa tu progreso y/o el contador de reportes aprobados.\n" +
-      "• Si no sube, el reporte sigue pendiente o fue rechazado.",
+      "Para revisar si fue aprobado:\n" +
+      "• Consulta tu dashboard\n" +
+      "• Verifica tu avance y horas acumuladas\n" +
+      "• Si no cambia, puede seguir pendiente o rechazado",
     options: [
       { label: "Volver a Reportes", next: "upload_report", group: "Navegación" },
       { label: "Menú principal", next: "start", group: "Navegación" },
@@ -190,10 +191,10 @@ const FLOW = {
     title: "Reportes",
     text:
       "Si falla la subida del reporte:\n" +
-      "• Verifica el tipo de archivo permitido\n" +
+      "• Verifica el tipo de archivo\n" +
       "• Revisa tu conexión\n" +
       "• Intenta con un archivo más ligero\n\n" +
-      "Si persiste, crea ticket y adjunta captura.",
+      "Si persiste, crea un ticket y adjunta captura.",
     options: [
       { label: "Crear ticket", next: "cta_ticket", group: "Acción" },
       { label: "Menú principal", next: "start", group: "Navegación" },
@@ -203,12 +204,12 @@ const FLOW = {
   tickets_help: {
     title: "Tickets / soporte",
     text:
-      "Los tickets sirven para soporte (incidencias).\n\n" +
+      "Los tickets sirven para reportar incidencias y solicitar ayuda.\n\n" +
       "Puedes:\n" +
       "• Crear un ticket\n" +
       "• Ver tus tickets\n" +
-      "• Chatear dentro del ticket (con adjunto opcional)\n\n" +
-      "Tip: cuando el admin responde, el ticket pasa a 'En proceso'.",
+      "• Chatear dentro del ticket\n" +
+      "• Adjuntar archivos",
     options: [
       { label: "¿Cómo creo un ticket?", next: "tickets_create", group: "Guía" },
       { label: "¿Cómo adjunto un archivo?", next: "tickets_attach", group: "Guía" },
@@ -223,9 +224,8 @@ const FLOW = {
       "Para crear un ticket:\n" +
       "1) Entra a 'Mis Tickets'.\n" +
       "2) Escribe asunto y descripción.\n" +
-      "3) (Opcional) Vincúlalo a una actividad.\n" +
-      "4) Crear.\n\n" +
-      "Después puedes entrar al detalle y chatear.",
+      "3) Opcionalmente relaciónalo con una actividad.\n" +
+      "4) Guarda.",
     options: [
       { label: "Ir a Mis Tickets", next: "cta_ticket", group: "Acción" },
       { label: "Menú principal", next: "start", group: "Navegación" },
@@ -236,10 +236,10 @@ const FLOW = {
     title: "Tickets / soporte",
     text:
       "Para adjuntar un archivo:\n" +
-      "1) Entra al detalle del ticket.\n" +
+      "1) Abre el ticket.\n" +
       "2) Escribe tu mensaje.\n" +
-      "3) Selecciona archivo (imagen/pdf/docx)\n" +
-      "4) Enviar.",
+      "3) Selecciona archivo.\n" +
+      "4) Envía.",
     options: [
       { label: "Ir a Mis Tickets", next: "cta_ticket", group: "Acción" },
       { label: "Menú principal", next: "start", group: "Navegación" },
@@ -250,7 +250,7 @@ const FLOW = {
     title: "Acción",
     text:
       "Te envío a 'Mis Tickets' para que lo reportes.\n\n" +
-      "Sugerencia: adjunta captura para resolverlo más rápido.",
+      "Sugerencia: adjunta una captura para resolverlo más rápido.",
     options: [
       { label: "Ir a Mis Tickets", next: NAV_TICKETS, group: "Acción" },
       { label: "Menú principal", next: "start", group: "Navegación" },
@@ -261,7 +261,25 @@ const FLOW = {
 const nowTime = () =>
   new Intl.DateTimeFormat("es-MX", { hour: "2-digit", minute: "2-digit" }).format(new Date());
 
-function makeMsg(role, text) {
+function mapSourceMeta(source = "") {
+  const s = String(source || "").toLowerCase();
+
+  if (s.includes("ollama")) {
+    return { tone: "ai", label: "IA integrada", icon: "ai" };
+  }
+
+  if (s.includes("dictionary")) {
+    return { tone: "quick", label: "Respuesta rápida", icon: "bolt" };
+  }
+
+  if (s.includes("fallback")) {
+    return { tone: "fallback", label: "Soporte local", icon: "check" };
+  }
+
+  return { tone: "neutral", label: "EcoBot", icon: "spark" };
+}
+
+function makeMsg(role, text, extra = {}) {
   return {
     id:
       (typeof crypto !== "undefined" && crypto.randomUUID?.()) ||
@@ -269,28 +287,50 @@ function makeMsg(role, text) {
     role,
     text,
     ts: nowTime(),
+    source: extra.source || null,
+    tone: extra.tone || null,
+    badge: extra.badge || null,
+    isThinking: Boolean(extra.isThinking),
   };
 }
 
-function groupOptions(options) {
-  const map = new Map();
-  for (const opt of options) {
-    const key = opt.group || "Opciones";
-    if (!map.has(key)) map.set(key, []);
-    map.get(key).push(opt);
-  }
-  return Array.from(map.entries());
+function renderSourceIcon(icon) {
+  if (icon === "ai") return <HiOutlineCpuChip />;
+  if (icon === "bolt") return <HiOutlineBolt />;
+  if (icon === "check") return <HiOutlineCheckBadge />;
+  return <HiOutlineSparkles />;
 }
 
 function ChatBubble({ botName, msg }) {
   const mine = msg.role === "user";
+  const sourceMeta = !mine ? mapSourceMeta(msg.source) : null;
 
   return (
-    <div className={`ecb-msg ${mine ? "is-mine" : "is-bot"}`}>
+    <div
+      className={[
+        "ecb-msg",
+        mine ? "is-mine" : "is-bot",
+        !mine && sourceMeta?.tone ? `is-${sourceMeta.tone}` : "",
+        msg.isThinking ? "is-thinking" : "",
+      ].join(" ")}
+    >
       <div className="ecb-msg-meta">
-        <span className="ecb-msg-who">{mine ? "Tú" : botName}</span>
+        <div className="ecb-msg-meta-left">
+          <span className="ecb-msg-who">{mine ? "Tú" : botName}</span>
+
+          {!mine ? (
+            <span className={`ecb-msg-badge is-${sourceMeta?.tone || "neutral"}`}>
+              <span className="ecb-msg-badge-icon" aria-hidden="true">
+                {renderSourceIcon(sourceMeta?.icon)}
+              </span>
+              <span>{msg.badge || sourceMeta?.label || "EcoBot"}</span>
+            </span>
+          ) : null}
+        </div>
+
         <span className="ecb-msg-time">{msg.ts}</span>
       </div>
+
       <div className="ecb-msg-text">{msg.text}</div>
     </div>
   );
@@ -337,6 +377,11 @@ function Sidebar({ displayName, roleSubtitle, goHome, goReport, goTickets, goHel
       </nav>
 
       <div className="ecb-sidebar-bottom">
+        <div className="ecb-status-chip">
+          <span className="ecb-status-dot" />
+          <span>Ollama local activo</span>
+        </div>
+
         <div className="ecb-usercard">
           <div className="ecb-usercard-top">
             <div className="ecb-user-avatar" aria-hidden="true">
@@ -359,81 +404,21 @@ function Sidebar({ displayName, roleSubtitle, goHome, goReport, goTickets, goHel
   );
 }
 
-function OptionsPanel({ options, query, setQuery, onChoose, onGoTickets, onReset }) {
-  const grouped = useMemo(() => groupOptions(options), [options]);
-  const [openGroup, setOpenGroup] = useState(() => grouped[0]?.[0] ?? "");
-
-  useEffect(() => {
-    setOpenGroup(grouped[0]?.[0] ?? "");
-  }, [grouped]);
-
-  const filteredGrouped = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return grouped;
-
-    const out = [];
-    for (const [g, opts] of grouped) {
-      const filtered = opts.filter((o) => o.label.toLowerCase().includes(q));
-      if (filtered.length) out.push([g, filtered]);
-    }
-    return out;
-  }, [grouped, query]);
-
-  const flatVisible = useMemo(() => {
-    const out = [];
-    for (const [g, opts] of filteredGrouped) {
-      if (openGroup && g !== openGroup) continue;
-      out.push(...opts);
-    }
-    return out.slice(0, 10);
-  }, [filteredGrouped, openGroup]);
-
-  useEffect(() => {
-    const onKey = (e) => {
-      const tag = (e.target?.tagName || "").toLowerCase();
-      if (tag === "input" || tag === "textarea") return;
-
-      if (e.key === "Escape") {
-        if (query) setQuery("");
-        return;
-      }
-
-      if (e.key === "Enter") {
-        const first = flatVisible[0];
-        if (first) onChoose(first);
-        return;
-      }
-
-      if (!/^[0-9]$/.test(e.key)) return;
-      const num = e.key === "0" ? 10 : Number(e.key);
-      const pick = flatVisible[num - 1];
-      if (pick) onChoose(pick);
-    };
-
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [flatVisible, onChoose, query, setQuery]);
-
-  const toggle = (g) => setOpenGroup((cur) => (cur === g ? "" : g));
+function NumberedOptions({ options, searchValue, onSearchChange, onChoose }) {
+  const visibleOptions = useMemo(() => {
+    const q = searchValue.trim().toLowerCase();
+    if (!q) return options.slice(0, 6);
+    return options.filter((o) => o.label.toLowerCase().includes(q)).slice(0, 6);
+  }, [options, searchValue]);
 
   return (
-    <div className="ecb-card ecb-options-card">
-      <div className="ecb-card-head">
+    <div className="ecb-quick-panel">
+      <div className="ecb-quick-panel-head">
         <div>
-          <h3 className="ecb-card-title">Opciones</h3>
-          <p className="ecb-card-subtitle">Elige un tema para continuar</p>
-        </div>
-
-        <div className="ecb-inline-actions">
-          <button className="ecb-btn ecb-btn-secondary ecb-btn-sm" type="button" onClick={onReset}>
-            <HiOutlineArrowPath />
-            <span>Reiniciar</span>
-          </button>
-
-          <button className="ecb-btn ecb-btn-primary ecb-btn-sm" type="button" onClick={onGoTickets}>
-            <HiOutlineTicket />
-            <span>Ir a Tickets</span>
-          </button>
+          <h3 className="ecb-section-title">Opciones rápidas</h3>
+          <p className="ecb-section-subtitle">
+            Busca o selecciona una opción para avanzar más rápido
+          </p>
         </div>
       </div>
 
@@ -445,66 +430,32 @@ function OptionsPanel({ options, query, setQuery, onChoose, onGoTickets, onReset
 
           <input
             className="ecb-search-input"
-            placeholder="Buscar (ej. evidencia, reporte, ticket)"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar opción rápida"
+            value={searchValue}
+            onChange={(e) => onSearchChange(e.target.value)}
           />
         </div>
       </div>
 
-      <div className="ecb-card-body ecb-options-body">
-        {filteredGrouped.length === 0 ? (
+      <div className="ecb-numbered-grid">
+        {visibleOptions.length ? (
+          visibleOptions.map((opt, index) => (
+            <button
+              key={`${opt.label}_${index}`}
+              type="button"
+              className="ecb-numbered-item"
+              onClick={() => onChoose(opt)}
+            >
+              <span className="ecb-numbered-index">{index + 1}</span>
+              <span className="ecb-numbered-label">{opt.label}</span>
+            </button>
+          ))
+        ) : (
           <div className="ecb-empty-mini">
             <div className="ecb-empty-mini-title">Sin resultados</div>
-            <p className="ecb-empty-mini-text">No hay opciones para “{query}”.</p>
+            <p className="ecb-empty-mini-text">No encontré opciones para “{searchValue}”.</p>
           </div>
-        ) : (
-          filteredGrouped.map(([groupName, opts]) => {
-            const isOpen = openGroup === groupName;
-
-            return (
-              <div key={groupName} className="ecb-acc">
-                <button
-                  type="button"
-                  className={`ecb-acc-head ${isOpen ? "is-open" : ""}`}
-                  onClick={() => toggle(groupName)}
-                  aria-expanded={isOpen}
-                >
-                  <span className="ecb-acc-title">{groupName}</span>
-                  <span className="ecb-acc-icon">
-                    {isOpen ? <HiOutlineChevronUp /> : <HiOutlineChevronDown />}
-                  </span>
-                </button>
-
-                {isOpen ? (
-                  <div className="ecb-acc-body">
-                    <div className="ecb-options-list">
-                      {opts.slice(0, 10).map((opt, idx) => (
-                        <button
-                          key={`${groupName}_${opt.label}`}
-                          className="ecb-option"
-                          type="button"
-                          onClick={() => onChoose(opt)}
-                          title={opt.label}
-                        >
-                          <span className="ecb-option-num">{idx + 1}</span>
-                          <span className="ecb-option-label">{opt.label}</span>
-                          <span className="ecb-option-arrow" aria-hidden="true">
-                            <HiOutlineArrowRight />
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-            );
-          })
         )}
-      </div>
-
-      <div className="ecb-options-hint">
-        Tip: busca por palabra clave. Ej.: <strong>cupo</strong>, <strong>rechazada</strong>, <strong>reporte</strong>.
       </div>
     </div>
   );
@@ -512,7 +463,8 @@ function OptionsPanel({ options, query, setQuery, onChoose, onGoTickets, onReset
 
 export default function HelpChatbot() {
   const navigate = useNavigate();
-  const endRef = useRef(null);
+  const localEndRef = useRef(null);
+  const aiEndRef = useRef(null);
 
   const { user } = useContext(AuthContext);
 
@@ -537,8 +489,20 @@ export default function HelpChatbot() {
   const [nodeId, setNodeId] = useState("start");
   const node = FLOW[nodeId];
 
-  const [messages, setMessages] = useState(() => [makeMsg("bot", FLOW.start.text)]);
-  const [query, setQuery] = useState("");
+  const [messages, setMessages] = useState(() => [
+    makeMsg("bot", FLOW.start.text, { source: "flow", badge: "Guía rápida", tone: "neutral" }),
+  ]);
+
+  const [aiMessages, setAiMessages] = useState(() => [
+    makeMsg(
+      "bot",
+      "Hola, soy la IA integrada de EcoBot.\n\nPuedes preguntarme cualquier duda sobre EcoSteps en lenguaje natural.",
+      { source: "ollama", badge: "IA integrada", tone: "ai" }
+    ),
+  ]);
+
+  const [optionSearch, setOptionSearch] = useState("");
+  const [localInput, setLocalInput] = useState("");
   const [freeQuestion, setFreeQuestion] = useState("");
   const [isAskingAI, setIsAskingAI] = useState(false);
   const [isCreatingTicket, setIsCreatingTicket] = useState(false);
@@ -547,55 +511,145 @@ export default function HelpChatbot() {
 
   const options = useMemo(() => node?.options || [], [node]);
 
-  useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length, isAskingAI, isCreatingTicket]);
-
-  const reset = useCallback(() => {
-    setNodeId("start");
-    setQuery("");
-    setFreeQuestion("");
-    setIsAskingAI(false);
-    setIsCreatingTicket(false);
-    setLastQuestionForTicket("");
-    setShowCreateTicketBtn(false);
-    setMessages([makeMsg("bot", FLOW.start.text)]);
-  }, []);
-
   const goHome = useCallback(() => navigate(ROUTES.home), [navigate]);
   const goReport = useCallback(() => navigate(ROUTES.report), [navigate]);
   const goTickets = useCallback(() => navigate(ROUTES.tickets), [navigate]);
   const goHelp = useCallback(() => navigate(ROUTES.help), [navigate]);
 
+  useEffect(() => {
+    localEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  useEffect(() => {
+    aiEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [aiMessages, isAskingAI, isCreatingTicket]);
+
   const choose = useCallback(
     (opt) => {
-      setQuery("");
+      setOptionSearch("");
+      setLocalInput("");
 
       setMessages((prev) => {
         const nextMsgs = [...prev, makeMsg("user", opt.label)];
 
         if (opt.next === NAV_TICKETS) {
-          nextMsgs.push(makeMsg("bot", "Abriendo Mis Tickets..."));
+          nextMsgs.push(
+            makeMsg("bot", "Abriendo Mis Tickets...", {
+              source: "flow",
+              badge: "Navegación",
+            })
+          );
           setTimeout(() => goTickets(), 220);
           return nextMsgs;
         }
 
         const nextId = opt.next;
         const nextNode = FLOW[nextId];
-
         setTimeout(() => setNodeId(nextId), 0);
-        if (nextNode?.text) nextMsgs.push(makeMsg("bot", nextNode.text));
+
+        if (nextNode?.text) {
+          nextMsgs.push(
+            makeMsg("bot", nextNode.text, {
+              source: "flow",
+              badge: nextNode.title || "Guía rápida",
+            })
+          );
+        }
+
         return nextMsgs;
       });
     },
     [goTickets]
   );
 
+  useEffect(() => {
+    const onKey = (e) => {
+      const tag = (e.target?.tagName || "").toLowerCase();
+      if (tag === "input" || tag === "textarea") return;
+
+      if (!/^[1-6]$/.test(e.key)) return;
+
+      const index = Number(e.key) - 1;
+      const selected = options.slice(0, 6)[index];
+      if (selected) choose(selected);
+    };
+
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [options, choose]);
+
+  const reset = useCallback(() => {
+    setNodeId("start");
+    setOptionSearch("");
+    setLocalInput("");
+    setFreeQuestion("");
+    setIsAskingAI(false);
+    setIsCreatingTicket(false);
+    setLastQuestionForTicket("");
+    setShowCreateTicketBtn(false);
+
+    setMessages([
+      makeMsg("bot", FLOW.start.text, {
+        source: "flow",
+        badge: "Guía rápida",
+        tone: "neutral",
+      }),
+    ]);
+
+    setAiMessages([
+      makeMsg(
+        "bot",
+        "Hola, soy la IA integrada de EcoBot.\n\nPuedes preguntarme cualquier duda sobre EcoSteps en lenguaje natural.",
+        { source: "ollama", badge: "IA integrada", tone: "ai" }
+      ),
+    ]);
+  }, []);
+
+  const handleLocalSend = useCallback(() => {
+    const value = localInput.trim();
+    if (!value) return;
+
+    if (/^[1-6]$/.test(value)) {
+      const index = Number(value) - 1;
+      const selected = options.slice(0, 6)[index];
+      if (selected) {
+        choose(selected);
+        setLocalInput("");
+        return;
+      }
+    }
+
+    setMessages((prev) => [
+      ...prev,
+      makeMsg("user", value),
+      makeMsg(
+        "bot",
+        "Selecciona una opción válida usando un número del 1 al 6 o haz clic en una opción rápida.",
+        {
+          source: "fallback",
+          badge: "Soporte local",
+          tone: "fallback",
+        }
+      ),
+    ]);
+    setLocalInput("");
+  }, [localInput, options, choose]);
+
+  const handleLocalKeyDown = useCallback(
+    (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        handleLocalSend();
+      }
+    },
+    [handleLocalSend]
+  );
+
   const handleAskAI = useCallback(async () => {
     const text = freeQuestion.trim();
     if (!text || isAskingAI) return;
 
-    setMessages((prev) => [...prev, makeMsg("user", text)]);
+    setAiMessages((prev) => [...prev, makeMsg("user", text)]);
     setFreeQuestion("");
     setIsAskingAI(true);
     setLastQuestionForTicket(text);
@@ -603,17 +657,21 @@ export default function HelpChatbot() {
 
     try {
       const data = await askEcoBot(text);
+      const meta = mapSourceMeta(data?.source);
 
-      setMessages((prev) => [
+      setAiMessages((prev) => [
         ...prev,
-        makeMsg("bot", data?.answer || "No pude responder en este momento."),
+        makeMsg("bot", data?.answer || "No pude responder en este momento.", {
+          source: data?.source || "ollama",
+          badge: meta.label,
+          tone: meta.tone,
+        }),
       ]);
 
       const lower = text.toLowerCase();
       const shouldOfferTicket =
         data?.canCreateTicket &&
-        (
-          lower.includes("problema") ||
+        (lower.includes("problema") ||
           lower.includes("error") ||
           lower.includes("no puedo") ||
           lower.includes("no me deja") ||
@@ -621,16 +679,20 @@ export default function HelpChatbot() {
           lower.includes("falla") ||
           lower.includes("rechazada") ||
           lower.includes("ticket") ||
-          lower.includes("soporte")
-        );
+          lower.includes("soporte"));
 
       setShowCreateTicketBtn(Boolean(shouldOfferTicket));
     } catch (error) {
-      setMessages((prev) => [
+      setAiMessages((prev) => [
         ...prev,
         makeMsg(
           "bot",
-          error?.message || "Ocurrió un error al consultar EcoBot. Intenta nuevamente."
+          error?.message || "Ocurrió un error al consultar EcoBot. Intenta nuevamente.",
+          {
+            source: "fallback",
+            badge: "Error controlado",
+            tone: "fallback",
+          }
         ),
       ]);
       setShowCreateTicketBtn(true);
@@ -651,21 +713,31 @@ export default function HelpChatbot() {
         message: `Ticket generado desde EcoBot.\n\nProblema reportado por el usuario:\n${baseMessage}`,
       });
 
-      setMessages((prev) => [
+      setAiMessages((prev) => [
         ...prev,
         makeMsg(
           "bot",
-          `Listo. Ya creé tu ticket: "${res?.ticket?.subject || "Soporte EcoBot"}". Puedes revisarlo en Mis Tickets.`
+          `Listo. Ya creé tu ticket: "${res?.ticket?.subject || "Soporte EcoBot"}". Puedes revisarlo en Mis Tickets.`,
+          {
+            source: "flow",
+            badge: "Ticket creado",
+            tone: "quick",
+          }
         ),
       ]);
 
       setShowCreateTicketBtn(false);
     } catch (error) {
-      setMessages((prev) => [
+      setAiMessages((prev) => [
         ...prev,
         makeMsg(
           "bot",
-          error?.message || "No pude crear el ticket en este momento."
+          error?.message || "No pude crear el ticket en este momento.",
+          {
+            source: "fallback",
+            badge: "Error controlado",
+            tone: "fallback",
+          }
         ),
       ]);
     } finally {
@@ -698,139 +770,207 @@ export default function HelpChatbot() {
         <main className="ecb-main" aria-label="EcoBot">
           <section className="ecb-hero">
             <div className="ecb-hero-copy">
-              <span className="ecb-kicker">ASISTENTE DE AYUDA</span>
-              <h1 className="ecb-hero-title">{BOT_NAME}</h1>
-              <p className="ecb-hero-text">
-                Guía rápida del sistema para actividades, evidencias, reportes, tickets y preguntas en lenguaje natural con modelo local.
+              <span className="ecb-topbar-kicker">ASISTENTE DE AYUDA</span>
+              <h1 className="ecb-topbar-title">EcoBot</h1>
+              <p className="ecb-topbar-text">
+                Centro de ayuda de EcoSteps para resolver dudas sobre actividades,
+                evidencias, reportes y tickets desde una sola vista.
               </p>
 
-              <div className="ecb-hero-actions">
-                <button className="ecb-btn ecb-btn-primary" type="button" onClick={reset}>
-                  <HiOutlineArrowPath />
-                  <span>Reiniciar</span>
-                </button>
-
-                <button className="ecb-btn ecb-btn-secondary" type="button" onClick={goTickets}>
-                  <HiOutlineTicket />
-                  <span>Tickets</span>
-                </button>
-
-                <button className="ecb-btn ecb-btn-secondary" type="button" onClick={goHome}>
-                  <HiOutlineHome />
-                  <span>Dashboard</span>
-                </button>
+              <div className="ecb-hero-pills">
+                <span className="ecb-hero-pill">Flujo guiado</span>
+                <span className="ecb-hero-pill">IA integrada</span>
+                <span className="ecb-hero-pill">Soporte y tickets</span>
               </div>
+            </div>
+
+            <div className="ecb-hero-actions">
+              <button className="ecb-btn ecb-btn-ghost" type="button" onClick={reset}>
+                <HiOutlineArrowPath />
+                <span>Reiniciar conversación</span>
+              </button>
             </div>
           </section>
 
-          <section className="ecb-content-grid">
-            <section className="ecb-card ecb-chat-card" aria-label="Chat EcoBot">
-              <div className="ecb-card-head">
-                <div>
-                  <h2 className="ecb-card-title">Chat de ayuda</h2>
-                  <p className="ecb-card-subtitle">Usa las opciones o escribe tu pregunta</p>
+          <section className="ecb-summary-grid" aria-label="Resumen de herramientas">
+            <article className="ecb-summary-card">
+              <div className="ecb-summary-icon is-quick">
+                <HiOutlineBolt />
+              </div>
+              <div className="ecb-summary-body">
+                <h3>Respuesta rápida</h3>
+                <p>
+                  Usa opciones numeradas para resolver dudas frecuentes de forma inmediata.
+                </p>
+              </div>
+            </article>
+
+            <article className="ecb-summary-card">
+              <div className="ecb-summary-icon is-ai">
+                <HiOutlineCpuChip />
+              </div>
+              <div className="ecb-summary-body">
+                <h3>Consulta con IA</h3>
+                <p>
+                  Escribe preguntas en lenguaje natural para obtener una respuesta más completa.
+                </p>
+              </div>
+            </article>
+
+            <article className="ecb-summary-card">
+              <div className="ecb-summary-icon is-ticket">
+                <HiOutlineTicket />
+              </div>
+              <div className="ecb-summary-body">
+                <h3>Escalación a soporte</h3>
+                <p>
+                  Si el problema persiste, puedes crear un ticket sin salir del módulo.
+                </p>
+              </div>
+            </article>
+          </section>
+
+          <section className="ecb-panels">
+            <section className="ecb-panel" aria-label="Soporte local">
+              <div className="ecb-panel-head">
+                <div className="ecb-panel-badge is-quick">
+                  <HiOutlineBolt />
+                  <span>Soporte local</span>
                 </div>
 
-                <div className="ecb-inline-actions">
-                  <button className="ecb-btn ecb-btn-secondary ecb-btn-sm" type="button" onClick={goHome}>
-                    <HiOutlineHome />
-                    <span>Volver al Dashboard</span>
-                  </button>
-                </div>
+                <h2 className="ecb-panel-title">Guía rápida paso a paso</h2>
+                <p className="ecb-panel-subtitle">
+                  Navega por preguntas frecuentes con opciones rápidas y respuestas claras.
+                </p>
               </div>
 
-              <div className="ecb-card-body">
-                <div className="ecb-chat">
-                  {messages.map((m) => (
-                    <ChatBubble key={m.id} botName={BOT_NAME} msg={m} />
-                  ))}
+              <div className="ecb-chat ecb-chat-local">
+                {messages.map((m) => (
+                  <ChatBubble key={m.id} botName={BOT_NAME} msg={m} />
+                ))}
+                <div ref={localEndRef} />
+              </div>
 
-                  {isAskingAI ? (
-                    <div className="ecb-msg is-bot">
-                      <div className="ecb-msg-meta">
-                        <span className="ecb-msg-who">{BOT_NAME}</span>
-                        <span className="ecb-msg-time">{nowTime()}</span>
-                      </div>
-                      <div className="ecb-msg-text">Pensando...</div>
-                    </div>
-                  ) : null}
+              <NumberedOptions
+                options={options}
+                searchValue={optionSearch}
+                onSearchChange={setOptionSearch}
+                onChoose={choose}
+              />
 
-                  {isCreatingTicket ? (
-                    <div className="ecb-msg is-bot">
-                      <div className="ecb-msg-meta">
-                        <span className="ecb-msg-who">{BOT_NAME}</span>
-                        <span className="ecb-msg-time">{nowTime()}</span>
-                      </div>
-                      <div className="ecb-msg-text">Creando ticket...</div>
-                    </div>
-                  ) : null}
+              <div className="ecb-local-entry">
+                <label className="ecb-input-label">Elegir opción por número</label>
 
-                  <div ref={endRef} />
-                </div>
-
-                <div className="ecb-ai-box">
-                  <textarea
-                    className="ecb-ai-input"
-                    placeholder="Escribe tu duda sobre EcoSteps... Ej: no me aparece el botón para subir evidencia"
-                    value={freeQuestion}
-                    onChange={(e) => setFreeQuestion(e.target.value)}
-                    onKeyDown={onQuestionKeyDown}
-                    rows={3}
-                    disabled={isAskingAI || isCreatingTicket}
+                <div className="ecb-local-inputbar">
+                  <input
+                    className="ecb-local-input"
+                    placeholder="Ingresa un número del 1 al 6"
+                    value={localInput}
+                    onChange={(e) => setLocalInput(e.target.value)}
+                    onKeyDown={handleLocalKeyDown}
+                    inputMode="numeric"
                   />
 
-                  <div className="ecb-ai-actions">
-                    <button
-                      type="button"
-                      className="ecb-btn ecb-btn-primary"
-                      onClick={handleAskAI}
-                      disabled={isAskingAI || isCreatingTicket || !freeQuestion.trim()}
-                    >
-                      <HiOutlinePaperAirplane />
-                      <span>{isAskingAI ? "Consultando..." : "Preguntar a EcoBot"}</span>
-                    </button>
-
-                    {showCreateTicketBtn ? (
-                      <button
-                        type="button"
-                        className="ecb-btn ecb-btn-secondary"
-                        onClick={handleCreateTicketFromBot}
-                        disabled={isCreatingTicket}
-                      >
-                        <HiOutlineTicket />
-                        <span>{isCreatingTicket ? "Creando ticket..." : "Crear ticket con esto"}</span>
-                      </button>
-                    ) : null}
-                  </div>
+                  <button
+                    type="button"
+                    className="ecb-send-mini"
+                    onClick={handleLocalSend}
+                    aria-label="Enviar opción"
+                  >
+                    <HiOutlinePaperAirplane />
+                  </button>
                 </div>
               </div>
             </section>
 
-            <aside className="ecb-side" aria-label="Opciones EcoBot">
-              <OptionsPanel
-                options={options}
-                query={query}
-                setQuery={setQuery}
-                onChoose={choose}
-                onGoTickets={goTickets}
-                onReset={reset}
-              />
-
-              <div className="ecb-card ecb-tip-card">
-                <div className="ecb-card-head">
-                  <div className="ecb-side-head">
-                    <HiOutlineQuestionMarkCircle />
-                    <h3>Ayuda rápida</h3>
-                  </div>
+            <section className="ecb-panel" aria-label="IA integrada">
+              <div className="ecb-panel-head">
+                <div className="ecb-panel-badge is-ai">
+                  <HiOutlineCpuChip />
+                  <span>IA integrada</span>
                 </div>
 
-                <div className="ecb-card-body">
-                  <p className="ecb-side-text">
-                    Puedes navegar por categorías o escribir una pregunta libre sobre EcoSteps para que EcoBot te responda.
-                  </p>
+                <h2 className="ecb-panel-title">Consulta con IA</h2>
+                <p className="ecb-panel-subtitle">
+                  Describe tu duda con tus palabras y recibe una ayuda más completa.
+                </p>
+
+                <div className="ecb-ai-statusline">
+                  <span className="ecb-ai-status-dot" />
+                  <span>Ollama local activo • Modelo listo para responder</span>
                 </div>
               </div>
-            </aside>
+
+              <div className="ecb-chat ecb-chat-ai">
+                {aiMessages.map((m) => (
+                  <ChatBubble key={m.id} botName={`${BOT_NAME} IA`} msg={m} />
+                ))}
+
+                {isAskingAI ? (
+                  <ChatBubble
+                    botName={`${BOT_NAME} IA`}
+                    msg={makeMsg("bot", "Pensando con IA integrada...", {
+                      source: "ollama",
+                      badge: "IA integrada",
+                      tone: "ai",
+                      isThinking: true,
+                    })}
+                  />
+                ) : null}
+
+                {isCreatingTicket ? (
+                  <ChatBubble
+                    botName={`${BOT_NAME} IA`}
+                    msg={makeMsg("bot", "Creando ticket...", {
+                      source: "flow",
+                      badge: "Acción",
+                      tone: "quick",
+                      isThinking: true,
+                    })}
+                  />
+                ) : null}
+
+                <div ref={aiEndRef} />
+              </div>
+
+              <div className="ecb-ai-composer">
+                <label className="ecb-input-label">Escribe tu consulta</label>
+
+                <textarea
+                  className="ecb-ai-input"
+                  placeholder="Ejemplo: No se me reflejan mis horas, mi evidencia fue rechazada o no puedo subir mi reporte..."
+                  value={freeQuestion}
+                  onChange={(e) => setFreeQuestion(e.target.value)}
+                  onKeyDown={onQuestionKeyDown}
+                  rows={4}
+                  disabled={isAskingAI || isCreatingTicket}
+                />
+
+                <div className="ecb-ai-actions">
+                  {showCreateTicketBtn ? (
+                    <button
+                      type="button"
+                      className="ecb-btn ecb-btn-ghost-light"
+                      onClick={handleCreateTicketFromBot}
+                      disabled={isCreatingTicket}
+                    >
+                      <HiOutlineTicket />
+                      <span>{isCreatingTicket ? "Creando ticket..." : "Crear ticket con esto"}</span>
+                    </button>
+                  ) : null}
+
+                  <button
+                    type="button"
+                    className="ecb-btn ecb-btn-accent ecb-btn-submit"
+                    onClick={handleAskAI}
+                    disabled={isAskingAI || isCreatingTicket || !freeQuestion.trim()}
+                  >
+                    <HiOutlinePaperAirplane />
+                    <span>{isAskingAI ? "Consultando..." : "Preguntar"}</span>
+                  </button>
+                </div>
+              </div>
+            </section>
           </section>
         </main>
       </div>
