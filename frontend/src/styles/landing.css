@@ -1171,3 +1171,202 @@ button:focus-visible {
 .eco-topbar-inner {
   background: transparent !important;
 }
+
+/* =========================================
+   📱 MOBILE PRO (<= 768px)
+========================================= */
+@media (max-width: 768px) {
+
+  /* topbar */
+  .eco-topbar {
+    height: auto;
+    padding: 0.5rem 0;
+  }
+
+  .eco-topbar-inner {
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+
+  .eco-brand-name {
+    font-size: 0.95rem;
+  }
+
+  .eco-brand-sub {
+    font-size: 0.7rem;
+  }
+
+  /* drawer buttons full width */
+  .eco-drawer-cta {
+    flex-direction: column;
+  }
+
+  .eco-drawer-cta .eco-btn {
+    width: 100%;
+  }
+
+  /* hero */
+  .eco-hero {
+    padding: 2.2rem 0 1.2rem;
+  }
+
+  .eco-h1 {
+    font-size: 2rem;
+    line-height: 1.1;
+  }
+
+  .eco-lead {
+    font-size: 0.95rem;
+  }
+
+  .eco-hero-cta {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .eco-hero-cta .eco-btn {
+    width: 100%;
+  }
+
+  /* proof cards */
+  .eco-proof-item {
+    padding: 0.8rem;
+  }
+
+  /* preview */
+  .eco-preview {
+    padding: 0.8rem;
+  }
+
+  .eco-preview-title {
+    font-size: 0.95rem;
+  }
+
+  .eco-preview-sub {
+    font-size: 0.8rem;
+  }
+
+  .eco-progress-head {
+    font-size: 0.85rem;
+  }
+
+  /* mini rows */
+  .eco-minirow {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .eco-minirow-cta {
+    align-self: flex-end;
+  }
+
+  /* sections */
+  .eco-section {
+    padding: 1.6rem 0;
+  }
+
+  .eco-h2 {
+    font-size: 1.35rem;
+  }
+
+  .eco-sub {
+    font-size: 0.95rem;
+  }
+
+  /* cards */
+  .eco-card,
+  .eco-role,
+  .eco-step,
+  .eco-benefit,
+  .eco-testimonial {
+    padding: 0.9rem;
+    border-radius: 14px;
+  }
+
+  /* roles */
+  .eco-role-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  /* steps */
+  .eco-step {
+    flex-direction: row;
+  }
+
+  /* final CTA */
+  .eco-final-cta {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .eco-final-cta-actions {
+    flex-direction: column;
+  }
+
+  .eco-final-cta-actions .eco-btn {
+    width: 100%;
+  }
+
+  /* footer */
+  .eco-footer-inner {
+    flex-direction: column;
+  }
+
+  .eco-footer-right {
+    justify-content: flex-start;
+  }
+}
+
+
+/* =========================================
+   📱 SMALL MOBILE (<= 480px)
+========================================= */
+@media (max-width: 480px) {
+
+  .eco-h1 {
+    font-size: 1.75rem;
+  }
+
+  .eco-h2 {
+    font-size: 1.2rem;
+  }
+
+  .eco-lead {
+    font-size: 0.9rem;
+  }
+
+  .eco-btn-lg {
+    font-size: 0.9rem;
+    padding: 0.7rem 0.9rem;
+  }
+
+  .eco-logo-pill {
+    font-size: 0.75rem;
+    padding: 0.3rem 0.55rem;
+  }
+
+  .eco-proof-kpi {
+    font-size: 0.95rem;
+  }
+
+  .eco-proof-desc {
+    font-size: 0.85rem;
+  }
+
+  .eco-pkpi-value {
+    font-size: 1.1rem;
+  }
+
+  .eco-minirow-title {
+    font-size: 0.9rem;
+  }
+
+  .eco-testimonial-quote {
+    font-size: 0.9rem;
+  }
+
+  .eco-footer-sub {
+    font-size: 0.9rem;
+  }
+}

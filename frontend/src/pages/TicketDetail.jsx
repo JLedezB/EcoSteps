@@ -354,7 +354,9 @@ export default function TicketDetails() {
                         </div>
                         <div>
                           <div className="td-info-label">Actividad</div>
-                          <div className="td-info-value">{ticket?.activity?.titulo || "Sin actividad vinculada"}</div>
+                          <div className="td-info-value">
+                            {ticket?.activity?.titulo || "Sin actividad vinculada"}
+                          </div>
                         </div>
                       </div>
 

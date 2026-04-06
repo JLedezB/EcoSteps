@@ -23,17 +23,17 @@ import { AuthContext } from "../context/AuthContext";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 
-// Services (API)
+// Services
 import { login, googleAuth } from "../services/authService";
 
-// Firebase (Google popup auth)
+// Firebase
 import { signInWithPopup } from "firebase/auth";
 import { auth, provider } from "../services/firebase";
 
 // Session helpers
 import { setSession, getToken, getRole } from "../services/authSession";
 
-// Validation Schema
+// Schema
 const LoginSchema = Yup.object().shape({
   email: Yup.string().email("Correo inválido").required("El correo es obligatorio"),
   password: Yup.string().required("La contraseña es obligatoria"),
@@ -48,7 +48,6 @@ function Login() {
 
   const year = useMemo(() => new Date().getFullYear(), []);
 
-  // Session guard (si ya hay token)
   useEffect(() => {
     const token = getToken();
     const role = getRole();
@@ -61,7 +60,6 @@ function Login() {
 
   const routeByRole = (role) => (role === "admin" ? "/admin" : "/user");
 
-  // Google Login
   const handleGoogleLogin = async () => {
     try {
       setGoogleLoading(true);
@@ -71,13 +69,8 @@ function Login() {
 
       const res = await googleAuth(idToken);
 
-      // Persistencia de sesión (token + role)
       setSession({ token: res.token, role: res.user.role });
-
-      // ✅ Guardar user completo para UI (sidebar, etc.)
       setUser(res.user);
-
-      // Extra: userId
       localStorage.setItem("userId", res.user.id);
 
       navigate(routeByRole(res.user.role), { replace: true });
@@ -92,7 +85,7 @@ function Login() {
   return (
     <div className="auth-shell">
       <div className="auth-wrap">
-        {/* Panel izquierdo (visual) */}
+        {/* Panel visual */}
         <aside className="auth-side" aria-hidden="true">
           <div className="auth-side-inner">
             <div className="auth-side-badge">
@@ -113,10 +106,12 @@ function Login() {
                 <div className="auth-side-k">Evidencias</div>
                 <div className="auth-side-v">Con estatus y comentarios</div>
               </div>
+
               <div className="auth-side-card">
                 <div className="auth-side-k">Reportes</div>
                 <div className="auth-side-v">Entrega centralizada</div>
               </div>
+
               <div className="auth-side-card">
                 <div className="auth-side-k">Soporte</div>
                 <div className="auth-side-v">EcoBot + Tickets</div>
@@ -125,10 +120,11 @@ function Login() {
 
             <div className="auth-side-foot">© {year} EcoSteps SGSS</div>
           </div>
+
           <div className="auth-side-glow" />
         </aside>
 
-        {/* Card principal */}
+        {/* Card login */}
         <main className="auth-card auth-card-pro auth-pop">
           <header className="auth-head">
             <div className="auth-brand">
@@ -136,7 +132,7 @@ function Login() {
                 <FaLeaf />
               </div>
 
-              <div>
+              <div className="auth-brand-copy">
                 <h1 className="auth-title">EcoSteps SGSS</h1>
                 <p className="auth-subtitle">Inicia sesión para continuar</p>
               </div>
@@ -169,13 +165,12 @@ function Login() {
           >
             {({ status, isSubmitting, errors, touched }) => {
               const disabled = isSubmitting || googleLoading;
-
               const emailInvalid = Boolean(touched.email && errors.email);
               const passInvalid = Boolean(touched.password && errors.password);
 
               return (
                 <Form className="auth-form" noValidate>
-                  {/* Email */}
+                  {/* Correo */}
                   <div className="auth-field">
                     <label className="auth-label" htmlFor="email">
                       Correo
@@ -201,7 +196,7 @@ function Login() {
                     <ErrorMessage name="email" component="div" className="auth-error" />
                   </div>
 
-                  {/* Password */}
+                  {/* Contraseña */}
                   <div className="auth-field">
                     <label className="auth-label" htmlFor="password">
                       Contraseña
@@ -240,14 +235,14 @@ function Login() {
                     </div>
                   </div>
 
-                  {/* Status error */}
+                  {/* Error general */}
                   {status && (
                     <div className="auth-alert" role="alert" aria-live="polite">
                       {status}
                     </div>
                   )}
 
-                  {/* Submit */}
+                  {/* Botón login */}
                   <button type="submit" className="auth-btn auth-btn-primary" disabled={disabled}>
                     {isSubmitting ? (
                       <span className="auth-btn-loading">
@@ -259,7 +254,7 @@ function Login() {
                     )}
                   </button>
 
-                  {/* Divider (PRO) */}
+                  {/* Divider */}
                   <div className="auth-divider" role="separator" aria-label="o continuar con Google">
                     <span>o</span>
                   </div>

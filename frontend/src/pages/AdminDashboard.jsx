@@ -961,10 +961,10 @@ export default function AdminDashboard() {
                         </div>
 
                         <div className="activity-meta-box">
-                          <span className="activity-meta-label">Cupo</span>
-                          <span className="activity-meta-value">
-                            {a.cupoDisponible}/{a.cupoTotal}
-                          </span>
+                       <span className="activity-meta-label">Cupo</span>
+                      <span className="activity-meta-value">
+                           {(a.participants?.length || 0)}/{a.cupoTotal}
+                       </span>
                         </div>
 
                         <div className="activity-meta-box">

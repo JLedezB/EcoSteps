@@ -937,3 +937,191 @@ select:focus-visible {
     transition: none;
   }
 }
+
+/* =========================
+   MOBILE FIRST FIX PRO
+========================= */
+
+/* 🔥 Sidebar tipo app en móvil */
+@media (max-width: 1080px) {
+  .ru-sidebar {
+    position: relative;
+    top: 0;
+  }
+
+  .ru-nav {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+
+  .ru-nav-item {
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    min-height: 80px;
+    font-size: 0.75rem;
+    gap: 6px;
+  }
+
+  .ru-nav-ico {
+    font-size: 1.2rem;
+  }
+}
+
+/* 📱 MOBILE */
+@media (max-width: 720px) {
+  .ru-page {
+    padding: 10px;
+  }
+
+  .ru-shell {
+    gap: 12px;
+  }
+
+  /* Sidebar compacta */
+  .ru-sidebar-top {
+    padding: 12px;
+  }
+
+  .ru-brand-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .ru-brand-title {
+    font-size: 0.9rem;
+  }
+
+  .ru-brand-subtitle {
+    font-size: 0.75rem;
+  }
+
+  /* NAV tipo app */
+  .ru-nav {
+    padding: 10px;
+    gap: 6px;
+  }
+
+  .ru-nav-item {
+    min-height: 70px;
+    padding: 8px 6px;
+    border-radius: 14px;
+  }
+
+  /* USER CARD */
+  .ru-usercard {
+    padding: 10px;
+  }
+
+  .ru-user-avatar {
+    width: 38px;
+    height: 38px;
+    font-size: 0.9rem;
+  }
+
+  .ru-user-name {
+    font-size: 0.85rem;
+  }
+
+  .ru-user-role {
+    font-size: 0.75rem;
+  }
+
+  /* HERO */
+  .ru-hero {
+    padding: 16px;
+    border-radius: 20px;
+    grid-template-columns: 1fr;
+  }
+
+  .ru-hero-title {
+    font-size: 1.5rem;
+  }
+
+  .ru-hero-text {
+    font-size: 0.9rem;
+  }
+
+  .ru-hero-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .ru-hero-actions .ru-btn {
+    width: 100%;
+  }
+
+  /* STATS */
+  .ru-hero-panel {
+    grid-template-columns: 1fr;
+  }
+
+  /* GRID */
+  .ru-content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* FORM */
+  .ru-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* BOTONES */
+  .ru-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* DROPZONE */
+  .ru-dropzone {
+    flex-direction: column;
+    text-align: center;
+    gap: 12px;
+  }
+
+  .ru-drop-icon {
+    width: 48px;
+    height: 48px;
+  }
+
+  /* FILE CARD */
+  .ru-file-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .ru-file-card-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+/* 📱 SMALL MOBILE */
+@media (max-width: 480px) {
+  .ru-page {
+    padding: 8px;
+  }
+
+  .ru-nav-item {
+    font-size: 0.65rem;
+    min-height: 64px;
+  }
+
+  .ru-hero-title {
+    font-size: 1.3rem;
+  }
+
+  .ru-hero-text {
+    font-size: 0.85rem;
+  }
+
+  .ru-btn {
+    font-size: 0.85rem;
+    min-height: 38px;
+  }
+
+  .ru-card {
+    padding: 12px;
+  }
+}

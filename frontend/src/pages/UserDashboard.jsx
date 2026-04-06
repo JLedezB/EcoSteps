@@ -178,17 +178,20 @@ function ServiceProgressCard({ dash }) {
 function ActivityCard({ activity, isMineMode, evidence, onJoin, onLeave, onUploadEvidence }) {
   const title = activity?.titulo || "Actividad";
   const description = activity?.descripcion || "Sin descripción.";
-  const location = activity?.lugar || activity?.ubicacion || "Por definir";
+  const location = activity?.lugar || "Por definir";
+
   const date = activity?.fecha
     ? new Date(activity.fecha).toLocaleDateString("es-MX")
     : "Por definir";
 
+  // ✅ FIX: usar campos correctos del backend
+  const total = activity?.cupoTotal ?? null;
+  const currentParticipants = Array.isArray(activity?.participants)
+    ? activity.participants.length
+    : 0;
+
   const capacity =
-    activity?.cupoMaximo != null
-      ? `${activity?.participantes?.length || 0}/${activity.cupoMaximo}`
-      : activity?.cupo != null
-      ? `${activity?.participantes?.length || 0}/${activity.cupo}`
-      : "Sin límite";
+    total !== null ? `${currentParticipants}/${total}` : "Sin límite";
 
   const isJoined =
     Boolean(activity?.isJoined) ||
@@ -196,23 +199,12 @@ function ActivityCard({ activity, isMineMode, evidence, onJoin, onLeave, onUploa
     Boolean(activity?.inscrito) ||
     Boolean(activity?.enrolled);
 
-  const isClosed =
-    activity?.cerrada === true ||
-    activity?.closed === true ||
-    activity?.estado === "cerrada";
+  const isClosed = activity?.estado === "cerrada";
 
-  const maxCap =
-    typeof activity?.cupoMaximo === "number"
-      ? activity.cupoMaximo
-      : typeof activity?.cupo === "number"
-      ? activity.cupo
-      : null;
-
-  const currentParticipants = Array.isArray(activity?.participantes)
-    ? activity.participantes.length
-    : 0;
-
-  const isFull = !isClosed && typeof maxCap === "number" && currentParticipants >= maxCap;
+  const isFull =
+    !isClosed &&
+    typeof total === "number" &&
+    currentParticipants >= total;
 
   let statusLabel = "DISPONIBLE";
   let statusClass = "is-open";
@@ -284,7 +276,11 @@ function ActivityCard({ activity, isMineMode, evidence, onJoin, onLeave, onUploa
             <button className="act-btn act-btn-ghost" type="button" onClick={onUploadEvidence}>
               Subir evidencia
             </button>
-            <button className="act-btn act-btn-danger" type="button" onClick={() => onLeave(activity)}>
+            <button
+              className="act-btn act-btn-danger"
+              type="button"
+              onClick={() => onLeave(activity)}
+            >
               Cancelar inscripción
             </button>
           </>
@@ -564,7 +560,10 @@ export default function UserDashboard() {
           </section>
 
           {alert?.text && (
-            <div className={`dash-alert ${alert.type === "success" ? "is-success" : "is-danger"}`} role="alert">
+            <div
+              className={`dash-alert ${alert.type === "success" ? "is-success" : "is-danger"}`}
+              role="alert"
+            >
               {alert.text}
             </div>
           )}
@@ -648,21 +647,33 @@ export default function UserDashboard() {
 
                   <div className="dash-panel-body">
                     <div className="dash-quick">
-                      <button className="dash-quick-btn" type="button" onClick={() => go(ROUTES.report)}>
+                      <button
+                        className="dash-quick-btn"
+                        type="button"
+                        onClick={() => go(ROUTES.report)}
+                      >
                         <span className="dash-quick-icon">
                           <HiOutlineDocumentText />
                         </span>
                         <span>Subir reporte</span>
                       </button>
 
-                      <button className="dash-quick-btn" type="button" onClick={() => go(ROUTES.tickets)}>
+                      <button
+                        className="dash-quick-btn"
+                        type="button"
+                        onClick={() => go(ROUTES.tickets)}
+                      >
                         <span className="dash-quick-icon">
                           <HiOutlineTicket />
                         </span>
                         <span>Ver tickets</span>
                       </button>
 
-                      <button className="dash-quick-btn" type="button" onClick={() => go(ROUTES.help)}>
+                      <button
+                        className="dash-quick-btn"
+                        type="button"
+                        onClick={() => go(ROUTES.help)}
+                      >
                         <span className="dash-quick-icon">
                           <HiOutlineSparkles />
                         </span>
@@ -686,7 +697,9 @@ export default function UserDashboard() {
 
                         <div className="dash-panel-minihead">
                           <div className="dash-panel-mini-title">Evidencias prioritarias</div>
-                          <div className="dash-panel-mini-sub">Pendientes, rechazadas o sin evidencia</div>
+                          <div className="dash-panel-mini-sub">
+                            Pendientes, rechazadas o sin evidencia
+                          </div>
                         </div>
 
                         <div className="dash-mini-list">
