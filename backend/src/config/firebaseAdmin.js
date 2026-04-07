@@ -1,33 +1,18 @@
-// ==============================
-// firebaseAdmin.js
-// Inicialización de Firebase Admin SDK
-// ==============================
-
 const admin = require("firebase-admin");
-const path = require("path");
 
-// ==============================
-// Inicialización segura (singleton)
-// ==============================
 if (!admin.apps.length) {
-  // 🔐 Credenciales de servicio
-  const serviceAccount = require(
-    path.join(
-      __dirname,
-      "../../ecosteps-ee7cd-firebase-adminsdk-fbsvc-e1ef3da4f6.json"
-    )
-  );
+  const serviceAccount = {
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+    privateKey: process.env.FIREBASE_PRIVATE_KEY
+      ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n")
+      : undefined,
+  };
 
   admin.initializeApp({
-    // Autenticación Admin
     credential: admin.credential.cert(serviceAccount),
-
-    // 🪣 Bucket de Firebase Storage
-    storageBucket: "ecosteps-ee7cd.appspot.com",
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET || "ecosteps-ee7cd.appspot.com",
   });
 }
 
-// ==============================
-// Export
-// ==============================
 module.exports = admin;
