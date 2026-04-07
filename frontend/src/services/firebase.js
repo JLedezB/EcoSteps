@@ -1,19 +1,9 @@
-// ==============================
-// firebase.js
-// Configuración de Firebase (Auth)
-// - Inicializa la app
-// - Exporta Auth
-// - Exporta GoogleAuthProvider
-// ==============================
-
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
 // ==============================
-// 1) Firebase configuration
+// Firebase configuration
 // ==============================
-// ⚠️ Estas claves son públicas por diseño (frontend).
-// La seguridad real depende de las reglas y del backend.
 const firebaseConfig = {
   apiKey: "AIzaSyCDysO7_sImnt-9jGjzsdj14KYtbELVCyY",
   authDomain: "ecosteps-ee7cd.firebaseapp.com",
@@ -24,23 +14,21 @@ const firebaseConfig = {
 };
 
 // ==============================
-// 2) Initialize Firebase App
+// Initialize Firebase App
 // ==============================
 const app = initializeApp(firebaseConfig);
 
 // ==============================
-// 3) Firebase Auth instance
+// Firebase Auth instance
 // ==============================
-// Se usa en login, Google OAuth, etc.
 const auth = getAuth(app);
 
 // ==============================
-// 4) Google Auth Provider
+// Google Auth Provider
 // ==============================
-// Usado para signInWithPopup / signInWithRedirect
 const provider = new GoogleAuthProvider();
 
 // ==============================
-// 5) Exports
+// Exports
 // ==============================
 export { auth, provider };

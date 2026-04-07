@@ -1,16 +1,22 @@
-
 import axios from "axios";
 import { getToken } from "./authSession";
 
 // ==============================
-// 1) Instancia base
+// 1) Base URL
+// ==============================
+const API_BASE_URL =
+  process.env.REACT_APP_API_URL || "https://ecosteps-les4.onrender.com";
+
+// ==============================
+// 2) Axios instance
 // ==============================
 const api = axios.create({
-  baseURL: "/api",
+  baseURL: `${API_BASE_URL}/api`,
+  timeout: 15000,
 });
 
 // ==============================
-// 2) Interceptor: Request
+// 3) Request interceptor
 // ==============================
 api.interceptors.request.use(
   (config) => {
@@ -26,13 +32,14 @@ api.interceptors.request.use(
 );
 
 // ==============================
-// 3) Interceptor: Response
+// 4) Response interceptor
 // ==============================
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     const message =
       error?.response?.data?.message ||
+      error?.response?.data?.error ||
       error?.message ||
       "Error en la petición";
 
@@ -41,6 +48,7 @@ api.interceptors.response.use(
 );
 
 // ==============================
-// 4) Export
+// 5) Export
 // ==============================
 export default api;
+export { API_BASE_URL };

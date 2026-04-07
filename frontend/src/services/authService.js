@@ -1,18 +1,7 @@
-import axios from "axios";
+import api from "./api";
 
 // ==============================
-// 1) Axios Instance
-// ==============================
-const api = axios.create({
-  baseURL: "/api/auth",
-  timeout: 10000,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-
-// ==============================
-// 2) Error Helper
+// 1) Error Helper
 // ==============================
 const parseError = (error, fallbackMessage) =>
   error?.response?.data?.message ||
@@ -21,11 +10,11 @@ const parseError = (error, fallbackMessage) =>
   fallbackMessage;
 
 // ==============================
-// 3) Login
+// 2) Login
 // ==============================
 export const login = async (payload) => {
   try {
-    const { data } = await api.post("/login", payload);
+    const { data } = await api.post("/auth/login", payload);
     return data;
   } catch (error) {
     throw new Error(parseError(error, "Error desconocido en login"));
@@ -33,12 +22,11 @@ export const login = async (payload) => {
 };
 
 // ==============================
-// 4) Registro (OTP flow)
+// 3) Registro (OTP flow)
 // ==============================
-
 export const requestRegisterCode = async (email) => {
   try {
-    const { data } = await api.post("/register/request-code", { email });
+    const { data } = await api.post("/auth/register/request-code", { email });
     return data;
   } catch (error) {
     throw new Error(parseError(error, "Error al enviar código"));
@@ -47,7 +35,7 @@ export const requestRegisterCode = async (email) => {
 
 export const verifyRegisterCode = async (payload) => {
   try {
-    const { data } = await api.post("/register/verify-code", payload);
+    const { data } = await api.post("/auth/register/verify-code", payload);
     return data;
   } catch (error) {
     throw new Error(parseError(error, "Error al verificar código"));
@@ -55,11 +43,11 @@ export const verifyRegisterCode = async (payload) => {
 };
 
 // ==============================
-// 5) Google Auth
+// 4) Google Auth
 // ==============================
 export const googleAuth = async (idToken) => {
   try {
-    const { data } = await api.post("/google", { idToken });
+    const { data } = await api.post("/auth/google", { idToken });
     return data;
   } catch (error) {
     throw new Error(parseError(error, "Error en Google Auth"));
@@ -67,20 +55,26 @@ export const googleAuth = async (idToken) => {
 };
 
 // ==============================
-// 6) Password Reset (OTP flow)
+// 5) Password Reset (OTP flow)
 // ==============================
 export const requestPasswordResetCode = async (email) => {
   try {
-    const { data } = await api.post("/password/request-code", { email });
+    const { data } = await api.post("/auth/password/request-code", { email });
     return data;
   } catch (error) {
-    throw new Error(parseError(error, "Error al enviar código de restablecimiento"));
+    throw new Error(
+      parseError(error, "Error al enviar código de restablecimiento")
+    );
   }
 };
 
-export const verifyPasswordResetCode = async ({ email, code, newPassword }) => {
+export const verifyPasswordResetCode = async ({
+  email,
+  code,
+  newPassword,
+}) => {
   try {
-    const { data } = await api.post("/password/verify-code", {
+    const { data } = await api.post("/auth/password/verify-code", {
       email,
       code,
       newPassword,

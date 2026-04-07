@@ -1,33 +1,9 @@
-// ==============================
-// progressService.js
-// Servicios de progreso del usuario
-// - Obtiene avance personal (horas / actividades)
-// ==============================
-
-import axios from "axios";
-import { getToken } from "./authSession";
+import api from "./api";
 
 // ==============================
-// 1) Configuración base
+// 1) Progreso del usuario
 // ==============================
-// Endpoint base para progreso
-const API_URL = "http://localhost:5000/api/progress";
-
-// ==============================
-// 2) Helper de autenticación
-// ==============================
-// Inyecta el token JWT en el header Authorization
-const authHeader = () => ({
-  headers: {
-    Authorization: `Bearer ${getToken()}`,
-  },
-});
-
-// ==============================
-// 3) Progreso del usuario
-// ==============================
-// Obtiene el progreso del usuario autenticado
 export const getMyProgress = async () => {
-  const res = await axios.get(`${API_URL}/me`, authHeader());
-  return res.data;
+  const { data } = await api.get("/progress/me");
+  return data;
 };

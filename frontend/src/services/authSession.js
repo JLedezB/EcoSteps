@@ -1,10 +1,6 @@
 // ==============================
 // authSession.js
 // Manejo de sesión en localStorage
-// - Token JWT
-// - Rol del usuario
-// - ID del usuario
-// - ✅ Perfil (nombre/apellido/email) para UI
 // ==============================
 
 const USER_KEY = "ecosteps_user";
@@ -12,19 +8,19 @@ const USER_KEY = "ecosteps_user";
 // ==============================
 // 1) Guardar sesión
 // ==============================
-// Guarda token, rol y opcionalmente perfil del usuario
-export const setSession = ({ token, role, user }) => {
+export const setSession = ({ token, role, user, userId }) => {
   if (token) localStorage.setItem("token", token);
   if (role) localStorage.setItem("role", role);
+  if (userId) localStorage.setItem("userId", userId);
 
-  // ✅ guarda el perfil si viene
-  if (user) localStorage.setItem(USER_KEY, JSON.stringify(user));
+  if (user) {
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
+  }
 };
 
 // ==============================
 // 2) Limpiar sesión
 // ==============================
-// Se usa en logout o expiración de sesión
 export const clearSession = () => {
   localStorage.removeItem("token");
   localStorage.removeItem("role");
@@ -33,13 +29,12 @@ export const clearSession = () => {
 };
 
 // ==============================
-// 3) Getters de sesión
+// 3) Getters
 // ==============================
 export const getToken = () => localStorage.getItem("token");
 export const getRole = () => localStorage.getItem("role");
 export const getUserId = () => localStorage.getItem("userId");
 
-// ✅ perfil completo (para sidebar)
 export const getSessionUser = () => {
   try {
     const raw = localStorage.getItem(USER_KEY);

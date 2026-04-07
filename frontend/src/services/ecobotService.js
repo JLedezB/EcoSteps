@@ -1,28 +1,14 @@
-import axios from "axios";
-import { getToken } from "./authSession";
-
-const API_URL = "http://localhost:5000/api/chatbot";
-
-const authHeader = () => ({
-  headers: {
-    Authorization: `Bearer ${getToken()}`,
-  },
-});
+import api from "./api";
 
 export const askEcoBot = async (message) => {
-  const res = await axios.post(
-    `${API_URL}/ask`,
-    { message },
-    authHeader()
-  );
-  return res.data;
+  const { data } = await api.post("/chatbot/ask", { message });
+  return data;
 };
 
 export const createTicketFromEcoBot = async ({ message, subject }) => {
-  const res = await axios.post(
-    `${API_URL}/create-ticket`,
-    { message, subject },
-    authHeader()
-  );
-  return res.data;
+  const { data } = await api.post("/chatbot/create-ticket", {
+    message,
+    subject,
+  });
+  return data;
 };
