@@ -22,8 +22,6 @@ import * as Yup from "yup";
 import { requestRegisterCode } from "../services/authService";
 
 // ✅ Policy (igual que backend)
-// Nota: el backend puede limitar a 72; aquí lo mantenemos en regex,
-// pero en UI ya NO mostramos "72", solo "mínimo 8".
 const STRONG_PWD_REGEX =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s])(?!.*\s).{8,72}$/;
 
@@ -41,6 +39,9 @@ const RegisterSchema = Yup.object().shape({
     .trim()
     .matches(/^[0-9()+\-\s]*$/, "Teléfono inválido")
     .required("El teléfono es obligatorio"),
+  role: Yup.string()
+    .oneOf(["user", "admin"], "Rol inválido")
+    .required("El rol es obligatorio"),
 });
 
 function ReqPill({ ok, children }) {
@@ -119,6 +120,7 @@ function Register() {
               email: "",
               password: "",
               telefono: "",
+              role: "user",
             }}
             validationSchema={RegisterSchema}
             onSubmit={async (values, { setSubmitting, setStatus }) => {
@@ -135,6 +137,7 @@ function Register() {
                     email: values.email.trim(),
                     password: values.password,
                     telefono: values.telefono.trim(),
+                    role: values.role,
                   })
                 );
 
@@ -152,10 +155,11 @@ function Register() {
               const emailInvalid = Boolean(touched.email && errors.email);
               const passInvalid = Boolean(touched.password && errors.password);
               const telInvalid = Boolean(touched.telefono && errors.telefono);
+              const roleInvalid = Boolean(touched.role && errors.role);
 
               const pwd = values.password || "";
               const checks = {
-                len: pwd.length >= 8, // ✅ ya no mostramos 72 en UI
+                len: pwd.length >= 8,
                 lower: /[a-z]/.test(pwd),
                 upper: /[A-Z]/.test(pwd),
                 num: /[0-9]/.test(pwd),
@@ -164,8 +168,7 @@ function Register() {
               };
               const allOk = Object.values(checks).every(Boolean);
 
-              // score simple para “barra”
-              const score = Object.values(checks).filter(Boolean).length; // 0..6
+              const score = Object.values(checks).filter(Boolean).length;
               const pct = Math.round((score / 6) * 100);
 
               const meterLabel =
@@ -173,6 +176,27 @@ function Register() {
 
               return (
                 <Form className="auth-form" noValidate>
+                  <div className="auth-field">
+                    <label className="auth-label">Tipo de cuenta</label>
+
+                    <div
+                      className={`auth-role-group ${roleInvalid ? "is-invalid" : ""}`}
+                      style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}
+                    >
+                      <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                        <Field type="radio" name="role" value="user" />
+                        Usuario
+                      </label>
+
+                      <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                        <Field type="radio" name="role" value="admin" />
+                        Admin
+                      </label>
+                    </div>
+
+                    <ErrorMessage name="role" component="div" className="auth-error" />
+                  </div>
+
                   <div className="auth-grid-2">
                     <div className="auth-field">
                       <label className="auth-label" htmlFor="nombre">
@@ -278,11 +302,13 @@ function Register() {
 
                     <ErrorMessage name="password" component="div" className="auth-error" />
 
-                    {/* ✅ Bloque profesional: barra + chips */}
                     <div className="pwd-box" aria-live="polite">
                       <div className="pwd-top">
                         <div className="pwd-title">
-                          Requisitos <span className={`pwd-state ${allOk ? "ok" : "warn"}`}>{allOk ? "Cumplidos" : "Pendientes"}</span>
+                          Requisitos{" "}
+                          <span className={`pwd-state ${allOk ? "ok" : "warn"}`}>
+                            {allOk ? "Cumplidos" : "Pendientes"}
+                          </span>
                         </div>
 
                         <div className="pwd-meter" title={`${pct}%`}>

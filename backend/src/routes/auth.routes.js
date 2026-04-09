@@ -62,7 +62,6 @@ router.post("/register/request-code", async (req, res) => {
       return res.status(400).json({ message: "Correo ya registrado" });
     }
 
-    // Anti-spam simple: si ya se mandó hace < 45s, bloquear
     const last = await EmailOtp.findOne({ email, used: false }).sort({ createdAt: -1 });
     if (last?.lastSentAt) {
       const diffMs = Date.now() - new Date(last.lastSentAt).getTime();
@@ -71,10 +70,9 @@ router.post("/register/request-code", async (req, res) => {
       }
     }
 
-    // Crear OTP
     const code = genCode();
     const codeHash = await bcrypt.hash(code, 10);
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
     await EmailOtp.create({
       email,
@@ -85,7 +83,6 @@ router.post("/register/request-code", async (req, res) => {
       lastSentAt: new Date(),
     });
 
-    // Enviar correo
     const from = process.env.RESEND_FROM || "EcoSteps <onboarding@resend.dev>";
 
     await resend.emails.send({
@@ -115,7 +112,7 @@ router.post("/register/request-code", async (req, res) => {
 // =========================
 // REGISTER (STEP 2) - VERIFY CODE + CREATE USER
 // POST /api/auth/register/verify-code
-// body: { code, nombre, apellido, email, password, telefono }
+// body: { code, nombre, apellido, email, password, telefono, role }
 // =========================
 router.post("/register/verify-code", async (req, res) => {
   try {
@@ -125,6 +122,7 @@ router.post("/register/verify-code", async (req, res) => {
     const email = String(req.body?.email || "").trim().toLowerCase();
     const password = String(req.body?.password || "");
     const telefono = String(req.body?.telefono || "").trim();
+    const role = String(req.body?.role || "user").trim().toLowerCase();
 
     if (!email || !isValidEmail(email)) return res.status(400).json({ message: "Correo inválido" });
     if (!code || code.length < 4) return res.status(400).json({ message: "Código inválido" });
@@ -133,7 +131,10 @@ router.post("/register/verify-code", async (req, res) => {
       return res.status(400).json({ message: "Faltan campos obligatorios" });
     }
 
-    // ✅ contraseña segura
+    if (!["user", "admin"].includes(role)) {
+      return res.status(400).json({ message: "Rol inválido" });
+    }
+
     if (!isStrongPassword(password)) {
       return res.status(400).json({ message: passwordPolicyMessage });
     }
@@ -169,7 +170,7 @@ router.post("/register/verify-code", async (req, res) => {
       email,
       password,
       telefono: telefono || "",
-      role: "user",
+      role,
       google: false,
     });
 
@@ -276,7 +277,6 @@ router.post("/password/verify-code", async (req, res) => {
     if (!email || !isValidEmail(email)) return res.status(400).json({ message: "Correo inválido" });
     if (!code || code.length < 4) return res.status(400).json({ message: "Código inválido" });
 
-    // ✅ contraseña segura
     if (!isStrongPassword(newPassword)) {
       return res.status(400).json({ message: passwordPolicyMessage });
     }

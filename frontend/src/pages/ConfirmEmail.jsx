@@ -38,18 +38,21 @@ export default function ConfirmEmail() {
         email: pending.email,
         password: pending.password,
         telefono: pending.telefono,
+        role: pending.role || "user",
       };
 
       const res = await verifyRegisterCode(payload);
 
-      // guardar sesión
       localStorage.setItem("token", res.token);
       localStorage.setItem("role", res.user?.role || "user");
 
-      // limpiar
       sessionStorage.removeItem("pendingRegister");
 
-      navigate("/user", { replace: true });
+      if ((res.user?.role || "user") === "admin") {
+        navigate("/admin", { replace: true });
+      } else {
+        navigate("/user", { replace: true });
+      }
     } catch (e) {
       setStatus(e?.message || "Error al verificar");
     } finally {
@@ -108,7 +111,12 @@ export default function ConfirmEmail() {
             {loading ? "Verificando..." : "Verificar y crear cuenta"}
           </button>
 
-          <button className="btn btn-outline-secondary w-100 mt-2" type="button" disabled={loading} onClick={onResend}>
+          <button
+            className="btn btn-outline-secondary w-100 mt-2"
+            type="button"
+            disabled={loading}
+            onClick={onResend}
+          >
             Reenviar código
           </button>
 
