@@ -1,28 +1,98 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import "../styles/landing.css";
 
 const NAV_ITEMS = [
+  { id: "quienes-somos", label: "Quiénes somos" },
   { id: "modulos", label: "Módulos" },
   { id: "roles", label: "Roles" },
-  { id: "como-funciona", label: "Cómo funciona" },
-  { id: "beneficios", label: "Beneficios" },
+  { id: "flujo", label: "Flujo" },
+  { id: "contacto", label: "Contáctanos" },
   { id: "faq", label: "FAQ" },
 ];
 
+function LogoIcon() {
+  return (
+    <span className="sl-logo-mark">
+      <svg
+        className="sl-logo-plant"
+        viewBox="0 0 64 64"
+        aria-hidden="true"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M31.8 53V35.2"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="5"
+          strokeLinecap="round"
+        />
+        <path
+          d="M31.7 36.5C21.5 34.9 15.2 28.2 13.2 18.4c9.9.6 18.1 5.7 20.9 15.6"
+          fill="currentColor"
+        />
+        <path
+          d="M34.2 32.8c2.6-11.9 10.9-18.4 22.4-19.9-1.3 12.3-9.5 21.6-22.4 23.1"
+          fill="currentColor"
+        />
+        <path
+          d="M18.6 23.1c4.6.9 8.2 3.3 10.7 7.2"
+          fill="none"
+          stroke="#0b3519"
+          strokeWidth="2.4"
+          strokeLinecap="round"
+          opacity="0.45"
+        />
+        <path
+          d="M50.2 18.8c-5.3 2-9.2 5.7-11.7 10.9"
+          fill="none"
+          stroke="#0b3519"
+          strokeWidth="2.4"
+          strokeLinecap="round"
+          opacity="0.45"
+        />
+      </svg>
+    </span>
+  );
+}
+
+function useReveal(threshold = 0.14) {
+  const ref = useRef(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          obs.disconnect();
+        }
+      },
+      { threshold }
+    );
+
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [threshold]);
+
+  return [ref, visible];
+}
+
 export default function LandingPage() {
-  const [compact, setCompact] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeId, setActiveId] = useState("top");
-
   const year = useMemo(() => new Date().getFullYear(), []);
   const observerRef = useRef(null);
 
   useEffect(() => {
-    const onScroll = () => setCompact(window.scrollY > 18);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    const fn = () => setScrolled(window.scrollY > 24);
+    fn();
+    window.addEventListener("scroll", fn, { passive: true });
+    return () => window.removeEventListener("scroll", fn);
   }, []);
 
   useEffect(() => {
@@ -30,21 +100,19 @@ export default function LandingPage() {
     const els = ids.map((id) => document.getElementById(id)).filter(Boolean);
 
     if (!els.length) return;
-
     if (observerRef.current) observerRef.current.disconnect();
 
     const obs = new IntersectionObserver(
       (entries) => {
         const visible = entries
           .filter((e) => e.isIntersecting)
-          .sort((a, b) => (b.intersectionRatio ?? 0) - (a.intersectionRatio ?? 0));
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
 
         if (visible[0]?.target?.id) setActiveId(visible[0].target.id);
       },
       {
-        root: null,
-        threshold: [0.15, 0.25, 0.4, 0.6],
-        rootMargin: "-20% 0px -65% 0px",
+        threshold: [0.1, 0.35, 0.6],
+        rootMargin: "-12% 0px -62% 0px",
       }
     );
 
@@ -55,598 +123,699 @@ export default function LandingPage() {
   }, []);
 
   useEffect(() => {
-    const onResize = () => {
+    const fn = () => {
       if (window.innerWidth > 980) setMenuOpen(false);
     };
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+
+    window.addEventListener("resize", fn);
+    return () => window.removeEventListener("resize", fn);
   }, []);
 
-  const onNavClick = (id) => (e) => {
-    e.preventDefault();
-    const el = document.getElementById(id);
-    if (!el) return;
-    setMenuOpen(false);
-    el.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
+  const scrollTo = useCallback(
+    (id) => (e) => {
+      e.preventDefault();
+      document.getElementById(id)?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+      setMenuOpen(false);
+    },
+    []
+  );
 
   return (
-    <div className="eco-landing">
-      <header className={`eco-topbar ${compact ? "is-compact" : ""}`}>
-        <div className="eco-container eco-topbar-inner">
-          <Link to="/" className="eco-brand" aria-label="Ir a inicio">
-            <div className="eco-brand-mark" aria-hidden="true">
-              🌿
-            </div>
-            <div className="eco-brand-text">
-              <div className="eco-brand-name">EcoSteps</div>
-              <div className="eco-brand-sub">SGSS · Servicio Social</div>
+    <div className="sl-root">
+      <header className={`sl-nav ${scrolled ? "sl-nav--solid" : ""}`}>
+        <div className="sl-nav-inner">
+          <Link to="/" className="sl-logo" aria-label="Ir al inicio">
+            <LogoIcon />
+
+            <div className="sl-logo-text">
+              <span className="sl-logo-name">EcoSteps</span>
+              <span className="sl-logo-tag">Servicio Social Digital</span>
             </div>
           </Link>
 
-          <nav className="eco-nav" aria-label="Navegación principal">
+          <nav className="sl-links" aria-label="Navegación principal">
             {NAV_ITEMS.map((item) => (
               <a
                 key={item.id}
                 href={`#${item.id}`}
-                className={`eco-nav-link ${activeId === item.id ? "is-active" : ""}`}
-                onClick={onNavClick(item.id)}
+                onClick={scrollTo(item.id)}
+                className={`sl-link ${activeId === item.id ? "sl-link--on" : ""}`}
               >
                 {item.label}
               </a>
             ))}
           </nav>
 
-          <div className="eco-actions">
-            <Link className="eco-btn eco-btn-ghost" to="/login">
-              Iniciar sesión
+          <div className="sl-nav-end">
+            <Link className="sl-btn sl-btn--ghost" to="/login">
+              Ingresar
             </Link>
 
-            <Link className="eco-btn eco-btn-solid" to="/register">
-              Crear cuenta
+            <Link className="sl-btn sl-btn--primary" to="/register">
+              Registrarse
             </Link>
 
             <button
-              className="eco-burger"
+              className="sl-burger"
               type="button"
               aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen((v) => !v)}
             >
-              <span />
-              <span />
-              <span />
+              <span className={menuOpen ? "x" : ""} />
+              <span className={menuOpen ? "x" : ""} />
             </button>
           </div>
         </div>
 
-        <div className={`eco-drawer ${menuOpen ? "is-open" : ""}`}>
-          <div className="eco-container eco-drawer-inner">
-            <div className="eco-drawer-links">
-              {NAV_ITEMS.map((item) => (
-                <a
-                  key={item.id}
-                  href={`#${item.id}`}
-                  className={`eco-drawer-link ${activeId === item.id ? "is-active" : ""}`}
-                  onClick={onNavClick(item.id)}
-                >
-                  {item.label}
-                </a>
-              ))}
-            </div>
+        <div className={`sl-drawer ${menuOpen ? "sl-drawer--open" : ""}`}>
+          {NAV_ITEMS.map((item) => (
+            <a
+              key={item.id}
+              href={`#${item.id}`}
+              onClick={scrollTo(item.id)}
+              className={`sl-dlink ${activeId === item.id ? "sl-dlink--on" : ""}`}
+            >
+              <span>{item.label}</span>
+              <span>↗</span>
+            </a>
+          ))}
 
-            <div className="eco-drawer-cta">
-              <Link className="eco-btn eco-btn-ghost" to="/login" onClick={() => setMenuOpen(false)}>
-                Iniciar sesión
-              </Link>
-              <Link className="eco-btn eco-btn-solid" to="/register" onClick={() => setMenuOpen(false)}>
-                Crear cuenta
-              </Link>
-            </div>
+          <div className="sl-drawer-btns">
+            <Link className="sl-btn sl-btn--ghost" to="/login">
+              Ingresar
+            </Link>
+            <Link className="sl-btn sl-btn--primary" to="/register">
+              Registrarse
+            </Link>
           </div>
         </div>
       </header>
 
-      <section className="eco-hero" id="top">
-        <div className="eco-container eco-hero-grid">
-          <div className="eco-hero-left eco-anim">
-            <div className="eco-badge">
-              <span className="eco-badge-dot" aria-hidden="true" />
-              Plataforma para gestionar Servicio Social
+      <section id="top" className="sl-hero">
+        <div className="sl-orb sl-orb--one" />
+        <div className="sl-orb sl-orb--two" />
+        <div className="sl-orb sl-orb--three" />
+
+        <div className="sl-hero-inner">
+          <div className="sl-hero-left">
+            <div className="sl-tag sl-anim-1">
+              <span />
+              Plataforma integral para servicio social
             </div>
 
-            <h1 className="eco-h1">
-              Gestiona tu <span className="eco-gradient-text">Servicio Social</span> con orden,
-              seguimiento y trazabilidad real.
+            <h1 className="sl-h1 sl-anim-2">
+              Gestiona tu
+              <br />
+              servicio social
+              <br />
+              <span>sin desorden.</span>
             </h1>
 
-            <p className="eco-lead">
-              EcoSteps SGSS centraliza actividades, evidencias, reportes y soporte en una sola
-              plataforma. <strong>Menos confusión, más control y mejor seguimiento</strong> para
-              estudiantes y administradores.
+            <p className="sl-hero-body sl-anim-3">
+              EcoSteps centraliza actividades, evidencias, reportes, progreso y soporte
+              en una experiencia moderna, clara y profesional.
             </p>
 
-            <div className="eco-hero-cta">
-              <Link className="eco-btn eco-btn-solid eco-btn-lg" to="/register">
-                Empezar ahora
+            <div className="sl-hero-btns sl-anim-4">
+              <Link className="sl-btn sl-btn--primary sl-btn--lg" to="/register">
+                Comenzar ahora
+                <span className="sl-btn-arrow">→</span>
               </Link>
 
-              <a
-                className="eco-btn eco-btn-ghost eco-btn-lg"
-                href="#como-funciona"
-                onClick={onNavClick("como-funciona")}
-              >
-                Ver cómo funciona
+              <a className="sl-link-cta" href="#quienes-somos" onClick={scrollTo("quienes-somos")}>
+                Conocer EcoSteps
               </a>
             </div>
 
-            <div className="eco-proof">
-              <div className="eco-proof-item">
-                <div className="eco-proof-kpi">Actividades</div>
-                <div className="eco-proof-desc">Organizadas, visibles y controladas</div>
-              </div>
-
-              <div className="eco-proof-item">
-                <div className="eco-proof-kpi">Evidencias</div>
-                <div className="eco-proof-desc">Con estatus, revisión y comentarios</div>
-              </div>
-
-              <div className="eco-proof-item">
-                <div className="eco-proof-kpi">Soporte</div>
-                <div className="eco-proof-desc">Tickets y asistencia guiada con EcoBot</div>
-              </div>
-            </div>
-
-            <div className="eco-logos">
-              <span className="eco-logos-label">Pensado para:</span>
-              <div className="eco-logos-row" aria-label="Audiencias">
-                <span className="eco-logo-pill">Estudiantes</span>
-                <span className="eco-logo-pill">Coordinación</span>
-                <span className="eco-logo-pill">Administración</span>
-              </div>
+            <div className="sl-stats sl-anim-5">
+              <Stat value="6" label="Módulos clave" />
+              <Stat value="3" label="Reportes bimestrales" />
+              <Stat value="24/7" label="Acceso web" />
             </div>
           </div>
 
-          <div className="eco-hero-right eco-anim eco-delay-1">
-            <div className="eco-preview">
-              <div className="eco-preview-top">
-                <div>
-                  <div className="eco-preview-title">Panel de progreso</div>
-                  <div className="eco-preview-sub">Vista general del flujo del sistema</div>
-                </div>
-                <span className="eco-chip eco-chip-ok">En control</span>
-              </div>
+          <div className="sl-hero-right sl-anim-6">
+            <HeroDashboard />
+          </div>
+        </div>
 
-              <div className="eco-preview-kpis">
-                <PreviewKpi label="Reportes" value="1/3" hint="bimestrales" />
-                <PreviewKpi label="Evidencias" value="2" hint="pendientes" />
-                <PreviewKpi label="Horas" value="160/480" hint="acumuladas" />
-              </div>
+        <a
+          className="sl-scroll-hint"
+          href="#quienes-somos"
+          onClick={scrollTo("quienes-somos")}
+          aria-label="Ir a quiénes somos"
+        >
+          ↓
+        </a>
+      </section>
 
-              <div className="eco-progress">
-                <div className="eco-progress-head">
-                  <span>Progreso general</span>
-                  <span className="eco-muted">Bimestre 1 · 2 · 3</span>
+      <section id="quienes-somos" className="sl-section sl-about-section">
+        <div className="sl-wrap">
+          <div className="sl-about-grid">
+            <RevealBlock>
+              <p className="sl-eyebrow">Quiénes somos</p>
+              <h2 className="sl-h2">
+                Una plataforma creada para ordenar
+                el servicio social.
+              </h2>
+              <p className="sl-section-sub">
+                EcoSteps nace para transformar procesos dispersos en una experiencia digital
+                más simple, trazable y profesional para estudiantes y administradores.
+              </p>
+            </RevealBlock>
+
+            <RevealBlock delay={120}>
+              <div className="sl-about-panel">
+                <div className="sl-about-logo">
+                  <LogoIcon />
+                  <span>EcoSteps</span>
                 </div>
 
-                <div className="eco-progress-track" aria-hidden="true">
-                  <div className="eco-progress-bar" style={{ width: "35%" }} />
-                </div>
+                <p>
+                  Nuestro objetivo es reducir la fricción del seguimiento académico,
+                  mejorar la comunicación y mantener evidencia clara durante todo el proceso.
+                </p>
 
-                <div className="eco-progress-foot eco-muted">
-                  Cada reporte aprobado equivale a 160 horas registradas.
-                </div>
-              </div>
-
-              <div className="eco-preview-list">
-                <MiniRow
-                  title="Evidencia: Jornada comunitaria"
-                  chips={[
-                    { text: "Documento", tone: "muted" },
-                    { text: "Aprobada", tone: "ok" },
-                  ]}
-                />
-                <MiniRow
-                  title="Ticket: Duda sobre reporte"
-                  chips={[{ text: "En proceso", tone: "warn" }]}
-                />
-
-                <div className="eco-empty">
-                  <div className="eco-empty-ic" aria-hidden="true">
-                    🌿
-                  </div>
-                  <div className="eco-empty-title">Proceso claro</div>
-                  <div className="eco-empty-text">
-                    Todo queda organizado, visible y fácil de consultar.
-                  </div>
+                <div className="sl-about-values">
+                  <ValuePill icon="✓" text="Orden" />
+                  <ValuePill icon="↗" text="Trazabilidad" />
+                  <ValuePill icon="●" text="Claridad" />
                 </div>
               </div>
-            </div>
-
-            <div className="eco-glow" aria-hidden="true" />
-          </div>
-        </div>
-      </section>
-
-      <section id="modulos" className="eco-section">
-        <div className="eco-container">
-          <div className="eco-section-head">
-            <span className="eco-section-kicker">MÓDULOS</span>
-            <h2 className="eco-h2">Todo lo necesario en una sola plataforma</h2>
-            <p className="eco-sub">
-              EcoSteps integra los componentes clave del servicio social para que el proceso deje de
-              depender de mensajes dispersos, entregas informales o seguimiento manual.
-            </p>
+            </RevealBlock>
           </div>
 
-          <div className="eco-grid eco-grid-3">
-            <Feature
-              icon="📌"
-              title="Actividades"
-              desc="Consulta actividades disponibles, requisitos, cupo y estado de participación."
+          <div className="sl-about-cards">
+            <InfoCard
+              icon="🌱"
+              title="Propósito"
+              body="Facilitar el control de actividades, evidencias y reportes desde una sola plataforma."
             />
-            <Feature
-              icon="📎"
-              title="Evidencias"
-              desc="Sube archivos por actividad, revisa estatus y recibe comentarios de validación."
+            <InfoCard
+              icon="🧭"
+              title="Enfoque"
+              body="Diseño limpio, navegación sencilla y procesos entendibles para cada usuario."
             />
-            <Feature
-              icon="🧾"
-              title="Reportes"
-              desc="Entrega reportes bimestrales desde un flujo centralizado y ordenado."
-            />
-            <Feature
-              icon="📈"
-              title="Progreso"
-              desc="Visualiza horas acumuladas, avances y lo pendiente por completar."
-            />
-            <Feature
-              icon="🎫"
-              title="Tickets"
-              desc="Canal formal de soporte con historial, seguimiento y estados visibles."
-            />
-            <Feature
-              icon="🤖"
-              title="EcoBot"
-              desc="Asistente que ayuda a resolver dudas frecuentes y orienta al usuario."
+            <InfoCard
+              icon="🔒"
+              title="Confianza"
+              body="Información organizada, estados visibles y seguimiento formal mediante tickets."
             />
           </div>
         </div>
       </section>
 
-      <section id="roles" className="eco-section eco-section-alt">
-        <div className="eco-container">
-          <div className="eco-section-head">
-            <span className="eco-section-kicker">ROLES</span>
-            <h2 className="eco-h2">Experiencias diferenciadas para cada necesidad</h2>
-            <p className="eco-sub">
-              El sistema está diseñado para que estudiantes y administradores trabajen sobre el mismo
-              flujo, pero con responsabilidades claras y vistas específicas.
-            </p>
-          </div>
+      <section id="modulos" className="sl-section">
+        <div className="sl-wrap">
+          <RevealBlock>
+            <p className="sl-eyebrow">Módulos</p>
+            <h2 className="sl-h2">
+              Todo organizado,
+              <br />
+              sin saturar el proceso.
+            </h2>
+          </RevealBlock>
 
-          <div className="eco-grid eco-grid-2">
-            <Role
-              tone="ok"
-              title="Prestador (Estudiante)"
-              subtitle="Gestiona entregas y seguimiento con claridad"
-              bullets={[
-                "Explora actividades e inscríbete",
-                "Sube evidencias y revisa su estatus",
-                "Entrega reportes bimestrales",
-                "Consulta observaciones y avances",
-                "Solicita apoyo mediante EcoBot o Tickets",
-              ]}
-              ctaText="Entrar como estudiante"
-              ctaTo="/login"
-            />
-
-            <Role
-              tone="warn"
-              title="Administrador"
-              subtitle="Valida, acompaña y da trazabilidad"
-              bullets={[
-                "Revisa evidencias y reportes",
-                "Aprueba o rechaza con comentarios",
-                "Gestiona tickets de soporte",
-                "Administra actividades y cupos",
-                "Consulta indicadores de avance",
-              ]}
-              ctaText="Entrar como admin"
-              ctaTo="/login"
-            />
-          </div>
-        </div>
-      </section>
-
-      <section id="como-funciona" className="eco-section">
-        <div className="eco-container">
-          <div className="eco-section-head">
-            <span className="eco-section-kicker">FLUJO</span>
-            <h2 className="eco-h2">Cómo funciona EcoSteps</h2>
-            <p className="eco-sub">
-              Un proceso simple, estructurado y entendible desde el registro hasta el cierre del
-              servicio social.
-            </p>
-          </div>
-
-          <div className="eco-steps">
-            <Step n="1" title="Crea tu cuenta" desc="Regístrate e ingresa al sistema con tu rol correspondiente." />
-            <Step n="2" title="Participa en actividades" desc="Inscríbete, colabora y registra tu participación." />
-            <Step n="3" title="Sube evidencias y reportes" desc="Entrega documentación y revisa observaciones." />
-            <Step n="4" title="Da seguimiento al avance" desc="Consulta horas, estado de aprobación y soporte." />
-          </div>
-
-          <div className="eco-callout">
-            <div className="eco-callout-title">Menos desorden, más control</div>
-            <p className="eco-callout-text">
-              EcoSteps centraliza la operación diaria del servicio social para reducir errores,
-              duplicidad y falta de seguimiento.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section id="beneficios" className="eco-section eco-section-alt">
-        <div className="eco-container">
-          <div className="eco-section-head">
-            <span className="eco-section-kicker">VALOR</span>
-            <h2 className="eco-h2">Beneficios principales</h2>
-            <p className="eco-sub">
-              Diseñado para ofrecer una experiencia más profesional, consistente y confiable en la
-              gestión del servicio social.
-            </p>
-          </div>
-
-          <div className="eco-grid eco-grid-4">
-            <Benefit title="Estandarización" desc="Formatos y pasos claros para reducir dudas y errores." />
-            <Benefit title="Orden real" desc="Todo centralizado con historial, estatus y seguimiento." />
-            <Benefit title="Transparencia" desc="Decisiones visibles con comentarios y trazabilidad." />
-            <Benefit title="Acompañamiento" desc="Soporte guiado para resolver bloqueos rápidamente." />
-          </div>
-
-          <div className="eco-testimonials">
-            <Testimonial
-              quote="Ahora sé exactamente qué debo subir y en qué etapa voy. Todo es mucho más claro."
-              name="Estudiante"
-              role="Prestador"
-            />
-            <Testimonial
-              quote="La validación es más ordenada y queda registro de cada revisión. Eso mejora bastante la operación."
-              name="Administrador"
-              role="Coordinación"
-            />
-            <Testimonial
-              quote="El flujo de tickets y ayuda guiada reduce dudas repetidas y facilita el seguimiento."
-              name="Soporte"
-              role="Operación"
-            />
-          </div>
-        </div>
-      </section>
-
-      <section id="faq" className="eco-section">
-        <div className="eco-container">
-          <div className="eco-section-head">
-            <span className="eco-section-kicker">FAQ</span>
-            <h2 className="eco-h2">Preguntas frecuentes</h2>
-            <p className="eco-sub">Respuestas directas para entender el sistema rápidamente.</p>
-          </div>
-
-          <div className="eco-faq">
-            <Faq
-              q="¿EcoSteps reemplaza todo lo que ya hago?"
-              a="Centraliza actividades, evidencias, reportes y soporte. Reduce fricción y mejora la trazabilidad del proceso."
-            />
-            <Faq
-              q="¿Cómo se valida una evidencia o reporte?"
-              a="El administrador revisa la entrega, la aprueba o rechaza y agrega comentarios. El estudiante puede ver el estatus desde su panel."
-            />
-            <Faq
-              q="¿Qué pasa si tengo un problema o duda?"
-              a="Puedes usar EcoBot para dudas frecuentes o abrir un ticket para seguimiento formal con historial y estado."
-            />
-          </div>
-
-          <div className="eco-final-cta">
-            <div>
-              <div className="eco-final-cta-title">
-                Empieza tu Servicio Social con una plataforma más clara y profesional
-              </div>
-              <div className="eco-final-cta-sub">
-                Regístrate y conoce el flujo completo en minutos.
-              </div>
-            </div>
-
-            <div className="eco-final-cta-actions">
-              <Link className="eco-btn eco-btn-solid eco-btn-lg" to="/register">
-                Crear cuenta
-              </Link>
-              <Link className="eco-btn eco-btn-ghost eco-btn-lg" to="/login">
-                Iniciar sesión
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <footer className="eco-footer">
-        <div className="eco-container eco-footer-inner">
-          <div className="eco-footer-left">
-            <div className="eco-footer-brand">
-              <span className="eco-footer-mark" aria-hidden="true">
-                🌿
-              </span>
-              EcoSteps SGSS
-            </div>
-
-            <div className="eco-footer-sub">
-              Plataforma para gestionar servicio social con seguimiento, evidencias, reportes y soporte.
-            </div>
-
-            <div className="eco-footer-copy">© {year} EcoSteps</div>
-          </div>
-
-          <div className="eco-footer-right">
-            {NAV_ITEMS.map((item) => (
-              <a
-                key={item.id}
-                className="eco-footer-link"
-                href={`#${item.id}`}
-                onClick={onNavClick(item.id)}
-              >
-                {item.label}
-              </a>
+          <div className="sl-mods">
+            {[
+              {
+                n: "01",
+                icon: "📌",
+                title: "Actividades",
+                body: "Consulta actividades, requisitos, cupos y detalles importantes desde un solo lugar.",
+              },
+              {
+                n: "02",
+                icon: "📎",
+                title: "Evidencias",
+                body: "Sube archivos, revisa comentarios y mantén tus entregas ordenadas.",
+              },
+              {
+                n: "03",
+                icon: "🧾",
+                title: "Reportes",
+                body: "Entrega reportes bimestrales con seguimiento claro y trazable.",
+              },
+              {
+                n: "04",
+                icon: "📈",
+                title: "Progreso",
+                body: "Visualiza avance, horas acumuladas y pendientes por completar.",
+              },
+              {
+                n: "05",
+                icon: "🎫",
+                title: "Tickets",
+                body: "Canal formal para dudas, problemas o solicitudes con historial.",
+              },
+              {
+                n: "06",
+                icon: "🤖",
+                title: "EcoBot",
+                body: "Asistente de apoyo para dudas frecuentes y guía dentro del sistema.",
+              },
+            ].map((m, i) => (
+              <ModCard key={m.n} {...m} delay={i * 70} />
             ))}
           </div>
         </div>
+      </section>
+
+      <section id="roles" className="sl-section sl-section--dark">
+        <div className="sl-wrap">
+          <RevealBlock>
+            <p className="sl-eyebrow">Roles</p>
+            <h2 className="sl-h2">
+              Una experiencia pensada
+              <br />
+              para cada usuario.
+            </h2>
+          </RevealBlock>
+
+          <div className="sl-roles">
+            <RoleCard
+              tag="Estudiante"
+              headline="Prestador"
+              desc="Controla tus entregas, actividades y avance sin depender de mensajes dispersos."
+              items={[
+                "Inscripción a actividades disponibles",
+                "Carga de evidencias",
+                "Entrega de reportes",
+                "Consulta de progreso",
+                "Soporte mediante tickets",
+              ]}
+              cta="Entrar como prestador"
+              variant="green"
+            />
+
+            <RoleCard
+              tag="Administrador"
+              headline="Coordinador"
+              desc="Revisa entregas, administra actividades y da seguimiento con mayor orden."
+              items={[
+                "Validación de evidencias",
+                "Revisión de reportes",
+                "Administración de actividades",
+                "Gestión de tickets",
+                "Consulta general de avances",
+              ]}
+              cta="Entrar como administrador"
+              variant="gold"
+            />
+          </div>
+        </div>
+      </section>
+
+      <section id="flujo" className="sl-section">
+        <div className="sl-wrap">
+          <RevealBlock>
+            <p className="sl-eyebrow">Flujo</p>
+            <h2 className="sl-h2">
+              Del registro al cierre,
+              <br />
+              en pasos simples.
+            </h2>
+          </RevealBlock>
+
+          <div className="sl-flow">
+            {[
+              {
+                n: "01",
+                title: "Crea tu cuenta",
+                body: "Regístrate y accede con el rol correspondiente.",
+              },
+              {
+                n: "02",
+                title: "Elige actividad",
+                body: "Consulta actividades disponibles e inscríbete fácilmente.",
+              },
+              {
+                n: "03",
+                title: "Sube evidencias",
+                body: "Carga documentos, imágenes o archivos requeridos.",
+              },
+              {
+                n: "04",
+                title: "Cierra reportes",
+                body: "Entrega tus reportes y consulta el estado final.",
+              },
+            ].map((s, i) => (
+              <FlowStep key={s.n} {...s} delay={i * 100} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="contacto" className="sl-section sl-contact-section">
+        <div className="sl-wrap">
+          <div className="sl-contact-grid">
+            <RevealBlock>
+              <p className="sl-eyebrow">Contáctanos</p>
+              <h2 className="sl-h2">
+                ¿Tienes dudas?
+                <br />
+                Estamos para ayudarte.
+              </h2>
+              <p className="sl-section-sub">
+                Usa los canales de contacto para solicitar apoyo, resolver dudas o recibir
+                orientación sobre el uso de EcoSteps.
+              </p>
+
+              <div className="sl-contact-list">
+                <ContactItem icon="✉" label="Correo" value="soporte@ecosteps.mx" />
+                <ContactItem icon="⏱" label="Horario" value="Lunes a viernes · 9:00 a 18:00" />
+                <ContactItem icon="📍" label="Ubicación" value="Guadalajara, Jalisco" />
+              </div>
+            </RevealBlock>
+
+            <RevealBlock delay={120}>
+              <form className="sl-contact-card">
+                <div className="sl-field">
+                  <label>Nombre</label>
+                  <input type="text" placeholder="Tu nombre completo" />
+                </div>
+
+                <div className="sl-field">
+                  <label>Correo</label>
+                  <input type="email" placeholder="tu.correo@email.com" />
+                </div>
+
+                <div className="sl-field">
+                  <label>Mensaje</label>
+                  <textarea rows="5" placeholder="Escribe tu mensaje..." />
+                </div>
+
+                <button className="sl-btn sl-btn--primary sl-btn--lg" type="button">
+                  Enviar mensaje
+                  <span>→</span>
+                </button>
+              </form>
+            </RevealBlock>
+          </div>
+        </div>
+      </section>
+
+      <section id="faq" className="sl-section sl-section--dark">
+        <div className="sl-wrap sl-faq-wrap">
+          <RevealBlock>
+            <p className="sl-eyebrow">FAQ</p>
+            <h2 className="sl-h2">
+              Respuestas
+              <br />
+              rápidas.
+            </h2>
+            <p className="sl-faq-aside">
+              Dudas comunes sobre el uso de EcoSteps y el flujo de entregas.
+            </p>
+          </RevealBlock>
+
+          <div className="sl-faq-list">
+            {[
+              {
+                q: "¿EcoSteps reemplaza mensajes y entregas informales?",
+                a: "Sí. Centraliza actividades, evidencias, reportes y soporte en un flujo más ordenado.",
+              },
+              {
+                q: "¿Cómo se valida una evidencia?",
+                a: "El administrador revisa la entrega, agrega comentarios y cambia el estado dentro del panel.",
+              },
+              {
+                q: "¿Qué hago si tengo dudas?",
+                a: "Puedes consultar EcoBot o abrir un ticket formal para recibir seguimiento.",
+              },
+              {
+                q: "¿Necesito instalar algo?",
+                a: "No. EcoSteps funciona directamente desde el navegador.",
+              },
+            ].map((f) => (
+              <FaqItem key={f.q} {...f} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="sl-cta">
+        <div className="sl-cta-inner">
+          <RevealBlock center>
+            <p className="sl-eyebrow">Empieza hoy</p>
+            <h2 className="sl-cta-h">
+              Menos desorden.
+              <br />
+              Más control.
+            </h2>
+            <p className="sl-cta-sub">
+              Gestiona tu servicio social con una experiencia más clara, moderna y profesional.
+            </p>
+
+            <div className="sl-cta-btns">
+              <Link className="sl-btn sl-btn--primary sl-btn--lg" to="/register">
+                Crear cuenta
+              </Link>
+              <Link className="sl-btn sl-btn--outline-light sl-btn--lg" to="/login">
+                Iniciar sesión
+              </Link>
+            </div>
+          </RevealBlock>
+        </div>
+      </section>
+
+      <footer className="sl-footer">
+        <div className="sl-footer-inner">
+          <div className="sl-footer-brand">
+            <LogoIcon />
+            <span>EcoSteps</span>
+          </div>
+
+          <nav className="sl-footer-nav">
+            {NAV_ITEMS.map((item) => (
+              <a key={item.id} href={`#${item.id}`} onClick={scrollTo(item.id)}>
+                {item.label}
+              </a>
+            ))}
+          </nav>
+
+          <p>© {year} EcoSteps</p>
+        </div>
       </footer>
-
-      <a className="eco-backtop" href="#top" onClick={onNavClick("top")} aria-label="Volver arriba">
-        ↑
-      </a>
     </div>
   );
 }
 
-/* UI Components */
-
-function Feature({ icon, title, desc }) {
+function HeroDashboard() {
   return (
-    <div className="eco-card eco-hover">
-      <div className="eco-card-ic" aria-hidden="true">
-        {icon}
+    <div className="sl-dashboard">
+      <div className="sl-db-glow" />
+
+      <div className="sl-db-bar">
+        <div className="sl-db-dots">
+          <span />
+          <span />
+          <span />
+        </div>
+        <span className="sl-db-label">Dashboard · Bimestre 1</span>
+        <span className="sl-db-badge">Activo</span>
       </div>
-      <div className="eco-card-title">{title}</div>
-      <div className="eco-card-desc">{desc}</div>
-    </div>
-  );
-}
 
-function Role({ title, subtitle, bullets, ctaText, ctaTo, tone }) {
-  return (
-    <div className={`eco-role eco-hover ${tone === "warn" ? "is-warn" : "is-ok"}`}>
-      <div className="eco-role-head">
-        <div>
-          <div className="eco-role-title">{title}</div>
-          <div className="eco-role-sub">{subtitle}</div>
+      <div className="sl-db-kpis">
+        <DbKpi value="33%" label="Progreso" accent />
+        <DbKpi value="1/3" label="Reportes" />
+        <DbKpi value="160h" label="Horas" />
+      </div>
+
+      <div className="sl-db-progress-wrap">
+        <div className="sl-db-progress-head">
+          <span>Avance general</span>
+          <strong>33%</strong>
         </div>
 
-        <span className={`eco-chip ${tone === "warn" ? "eco-chip-warn" : "eco-chip-ok"}`}>
-          {tone === "warn" ? "Gestión" : "Estudiante"}
-        </span>
+        <div className="sl-db-track">
+          <div className="sl-db-fill" />
+        </div>
+
+        <div className="sl-db-progress-foot">
+          Bimestre 1 completado parcialmente
+        </div>
       </div>
 
-      <ul className="eco-role-list">
-        {bullets.map((b, i) => (
-          <li key={i} className="eco-role-item">
-            <span className="eco-check" aria-hidden="true">
-              ✓
-            </span>
-            <span>{b}</span>
-          </li>
+      <div className="sl-db-items">
+        <DbRow label="Jornada comunitaria" sub="Evidencia · Documento" status="Aprobada" ok />
+        <DbRow label="Reporte Bimestre 1" sub="Reporte · PDF" status="En revisión" />
+        <DbRow label="Taller de capacitación" sub="Evidencia · Imagen" status="Pendiente" muted />
+      </div>
+
+      <div className="sl-db-foot">
+        <span>🌿</span>
+        <p>Información clara, trazable y siempre disponible.</p>
+      </div>
+    </div>
+  );
+}
+
+function DbKpi({ value, label, accent }) {
+  return (
+    <div className={`sl-dbkpi ${accent ? "sl-dbkpi--accent" : ""}`}>
+      <span>{value}</span>
+      <p>{label}</p>
+    </div>
+  );
+}
+
+function DbRow({ label, sub, status, ok, muted }) {
+  return (
+    <div className="sl-dbrow">
+      <div>
+        <strong>{label}</strong>
+        <p>{sub}</p>
+      </div>
+
+      <span className={`sl-dbbadge ${ok ? "ok" : muted ? "muted" : "warn"}`}>
+        {status}
+      </span>
+    </div>
+  );
+}
+
+function RevealBlock({ children, delay = 0, center = false }) {
+  const [ref, visible] = useReveal(0.1);
+
+  return (
+    <div
+      ref={ref}
+      className={`sl-reveal ${visible ? "sl-revealed" : ""} ${
+        center ? "sl-reveal--center" : ""
+      }`}
+      style={{ transitionDelay: `${delay}ms` }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function Stat({ value, label }) {
+  return (
+    <div className="sl-stat">
+      <span>{value}</span>
+      <p>{label}</p>
+    </div>
+  );
+}
+
+function ValuePill({ icon, text }) {
+  return (
+    <span className="sl-value-pill">
+      <i>{icon}</i>
+      {text}
+    </span>
+  );
+}
+
+function InfoCard({ icon, title, body }) {
+  const [ref, visible] = useReveal(0.1);
+
+  return (
+    <div ref={ref} className={`sl-info-card sl-reveal ${visible ? "sl-revealed" : ""}`}>
+      <span>{icon}</span>
+      <h3>{title}</h3>
+      <p>{body}</p>
+    </div>
+  );
+}
+
+function ContactItem({ icon, label, value }) {
+  return (
+    <div className="sl-contact-item">
+      <span>{icon}</span>
+      <div>
+        <strong>{label}</strong>
+        <p>{value}</p>
+      </div>
+    </div>
+  );
+}
+
+function ModCard({ n, icon, title, body, delay }) {
+  const [ref, visible] = useReveal(0.1);
+
+  return (
+    <div
+      ref={ref}
+      className={`sl-mod sl-reveal ${visible ? "sl-revealed" : ""}`}
+      style={{ transitionDelay: `${delay}ms` }}
+    >
+      <div className="sl-mod-head">
+        <span>{n}</span>
+        <i>{icon}</i>
+      </div>
+
+      <h3>{title}</h3>
+      <p>{body}</p>
+    </div>
+  );
+}
+
+function RoleCard({ tag, headline, desc, items, cta, variant }) {
+  const [ref, visible] = useReveal(0.1);
+
+  return (
+    <div
+      ref={ref}
+      className={`sl-role sl-role--${variant} sl-reveal ${
+        visible ? "sl-revealed" : ""
+      }`}
+    >
+      <p className="sl-role-tag">{tag}</p>
+      <h3>{headline}</h3>
+      <p className="sl-role-desc">{desc}</p>
+
+      <ul>
+        {items.map((item, i) => (
+          <li key={i}>{item}</li>
         ))}
       </ul>
 
-      <div className="eco-role-foot">
-        <Link className="eco-btn eco-btn-solid" to={ctaTo}>
-          {ctaText}
-        </Link>
-      </div>
+      <Link className={`sl-btn sl-btn--role sl-btn--role-${variant}`} to="/login">
+        {cta}
+      </Link>
     </div>
   );
 }
 
-function Step({ n, title, desc }) {
+function FlowStep({ n, title, body, delay }) {
+  const [ref, visible] = useReveal(0.1);
+
   return (
-    <div className="eco-step eco-hover">
-      <div className="eco-step-n">{n}</div>
-      <div>
-        <div className="eco-step-title">{title}</div>
-        <div className="eco-step-desc">{desc}</div>
-      </div>
+    <div
+      ref={ref}
+      className={`sl-fstep sl-reveal ${visible ? "sl-revealed" : ""}`}
+      style={{ transitionDelay: `${delay}ms` }}
+    >
+      <span>{n}</span>
+      <h3>{title}</h3>
+      <p>{body}</p>
     </div>
   );
 }
 
-function Benefit({ title, desc }) {
-  return (
-    <div className="eco-benefit eco-hover">
-      <div className="eco-benefit-title">{title}</div>
-      <div className="eco-benefit-desc">{desc}</div>
-    </div>
-  );
-}
-
-function Testimonial({ quote, name, role }) {
-  return (
-    <div className="eco-testimonial eco-hover">
-      <div className="eco-testimonial-quote">“{quote}”</div>
-      <div className="eco-testimonial-meta">
-        <div className="eco-testimonial-name">{name}</div>
-        <div className="eco-testimonial-role">{role}</div>
-      </div>
-    </div>
-  );
-}
-
-function Faq({ q, a }) {
+function FaqItem({ q, a }) {
   const [open, setOpen] = useState(false);
 
   return (
     <button
       type="button"
-      className={`eco-faq-item ${open ? "is-open" : ""}`}
+      className={`sl-faq ${open ? "sl-faq--open" : ""}`}
       onClick={() => setOpen((v) => !v)}
       aria-expanded={open}
     >
-      <div className="eco-faq-q">
+      <div className="sl-faq-top">
         <span>{q}</span>
-        <span className="eco-faq-plus" aria-hidden="true">
-          {open ? "−" : "+"}
-        </span>
+        <i>{open ? "−" : "+"}</i>
       </div>
-      <div className="eco-faq-a">{a}</div>
+
+      <p>{a}</p>
     </button>
-  );
-}
-
-function PreviewKpi({ label, value, hint }) {
-  return (
-    <div className="eco-pkpi">
-      <div className="eco-pkpi-label">{label}</div>
-      <div className="eco-pkpi-value">{value}</div>
-      <div className="eco-pkpi-hint">{hint}</div>
-    </div>
-  );
-}
-
-function MiniRow({ title, chips }) {
-  return (
-    <div className="eco-minirow">
-      <div className="eco-minirow-main">
-        <div className="eco-minirow-title">{title}</div>
-        <div className="eco-minirow-chips">
-          {chips.map((c, i) => (
-            <span
-              key={i}
-              className={`eco-chip ${
-                c.tone === "ok"
-                  ? "eco-chip-ok"
-                  : c.tone === "warn"
-                  ? "eco-chip-warn"
-                  : "eco-chip-muted"
-              }`}
-            >
-              {c.text}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      <span className="eco-minirow-cta eco-muted" aria-hidden="true">
-        Ver →
-      </span>
-    </div>
   );
 }
