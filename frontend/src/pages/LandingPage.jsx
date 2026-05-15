@@ -11,6 +11,54 @@ const NAV_ITEMS = [
   { id: "faq", label: "FAQ" },
 ];
 
+const CONTACT_CHANNELS = [
+  {
+    icon: "linkedin",
+    title: "LinkedIn",
+    value: "EcoSteps AC",
+    href: "https://www.linkedin.com/company/ecostepsac/?originalSubdomain=mx",
+    action: "Ver perfil",
+  },
+  {
+    icon: "facebook",
+    title: "Facebook",
+    value: "Ecosteps.mx",
+    href: "https://www.facebook.com/Ecosteps.mx",
+    action: "Visitar página",
+  },
+  {
+    icon: "web",
+    title: "Sitio web",
+    value: "ecostepsac.org",
+    href: "https://ecostepsac.org/",
+    action: "Abrir sitio",
+  },
+  {
+    icon: "phone",
+    title: "Teléfono",
+    value: "+52 33 1048 2080",
+    href: "tel:+523310482080",
+    action: "Llamar",
+  },
+  {
+    icon: "mail",
+    title: "Correo",
+    value: "ecosteps.mx@gmail.com",
+    href:
+      "https://mail.google.com/mail/?view=cm&fs=1&to=ecosteps.mx@gmail.com&su=Contacto%20desde%20EcoSteps SGSS&body=Hola%20EcoSteps,%20me%20gustaría%20recibir%20más%20información.",
+    action: "Enviar correo",
+  },
+  {
+    icon: "whatsapp",
+    title: "WhatsApp",
+    value: "+52 33 1048 2080",
+    href:
+      "https://api.whatsapp.com/send/?phone=%2B523310482080&text=Hola%20EcoSteps,%20me%20gustaría%20recibir%20más%20información.&type=phone_number&app_absent=0",
+    action: "Enviar mensaje",
+  },
+];
+
+
 function LogoIcon() {
   return (
     <span className="sl-logo-mark">
@@ -472,49 +520,23 @@ export default function LandingPage() {
 
       <section id="contacto" className="sl-section sl-contact-section">
         <div className="sl-wrap">
-          <div className="sl-contact-grid">
-            <RevealBlock>
-              <p className="sl-eyebrow">Contáctanos</p>
-              <h2 className="sl-h2">
-                ¿Tienes dudas?
-                <br />
-                Estamos para ayudarte.
-              </h2>
-              <p className="sl-section-sub">
-                Usa los canales de contacto para solicitar apoyo, resolver dudas o recibir
-                orientación sobre el uso de EcoSteps.
-              </p>
+          <RevealBlock center>
+            <p className="sl-eyebrow">Contáctanos</p>
+            <h2 className="sl-h2">
+              Canales oficiales
+              <br />
+              de EcoSteps.
+            </h2>
+            <p className="sl-contact-intro">
+              Encuentra nuestros medios oficiales para comunicarte, conocer más sobre
+              EcoSteps o solicitar información directamente.
+            </p>
+          </RevealBlock>
 
-              <div className="sl-contact-list">
-                <ContactItem icon="✉" label="Correo" value="soporte@ecosteps.mx" />
-                <ContactItem icon="⏱" label="Horario" value="Lunes a viernes · 9:00 a 18:00" />
-                <ContactItem icon="📍" label="Ubicación" value="Guadalajara, Jalisco" />
-              </div>
-            </RevealBlock>
-
-            <RevealBlock delay={120}>
-              <form className="sl-contact-card">
-                <div className="sl-field">
-                  <label>Nombre</label>
-                  <input type="text" placeholder="Tu nombre completo" />
-                </div>
-
-                <div className="sl-field">
-                  <label>Correo</label>
-                  <input type="email" placeholder="tu.correo@email.com" />
-                </div>
-
-                <div className="sl-field">
-                  <label>Mensaje</label>
-                  <textarea rows="5" placeholder="Escribe tu mensaje..." />
-                </div>
-
-                <button className="sl-btn sl-btn--primary sl-btn--lg" type="button">
-                  Enviar mensaje
-                  <span>→</span>
-                </button>
-              </form>
-            </RevealBlock>
+          <div className="sl-contact-cards-grid">
+            {CONTACT_CHANNELS.map((item, i) => (
+              <ContactCard key={item.title} {...item} delay={i * 70} />
+            ))}
           </div>
         </div>
       </section>
@@ -725,16 +747,77 @@ function InfoCard({ icon, title, body }) {
   );
 }
 
-function ContactItem({ icon, label, value }) {
+function ContactCard({ icon, title, value, href, action, delay }) {
+  const [ref, visible] = useReveal(0.1);
+
+  const isExternal =
+    href.startsWith("http") ||
+    href.startsWith("tel:");
+
   return (
-    <div className="sl-contact-item">
-      <span>{icon}</span>
-      <div>
-        <strong>{label}</strong>
+    <a
+      ref={ref}
+      href={href}
+      target={isExternal ? "_blank" : "_self"}
+      rel={isExternal ? "noreferrer" : undefined}
+      className={`sl-contact-card-link sl-reveal ${
+        visible ? "sl-revealed" : ""
+      }`}
+      style={{ transitionDelay: `${delay}ms` }}
+      aria-label={`${title}: ${value}`}
+    >
+      <span className={`sl-contact-icon sl-contact-icon--${icon}`}>
+        <ContactIcon type={icon} />
+      </span>
+
+      <div className="sl-contact-card-info">
+        <strong>{title}</strong>
         <p>{value}</p>
       </div>
-    </div>
+
+      <span className="sl-contact-action">
+        {action}
+        <i>→</i>
+      </span>
+    </a>
   );
+}
+
+function ContactIcon({ type }) {
+  const icons = {
+    linkedin: (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M6.94 8.98H3.73V20h3.21V8.98ZM5.34 7.47a1.86 1.86 0 1 0 0-3.72 1.86 1.86 0 0 0 0 3.72ZM20.27 20h-3.2v-5.36c0-1.28-.03-2.92-1.78-2.92-1.78 0-2.05 1.39-2.05 2.82V20h-3.2V8.98h3.07v1.5h.04c.43-.8 1.47-1.65 3.03-1.65 3.24 0 3.84 2.13 3.84 4.9V20h.25Z" />
+      </svg>
+    ),
+    facebook: (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M14.02 8.33V6.92c0-.68.45-.84.77-.84h1.96V3.07L14.05 3c-3 0-3.68 2.25-3.68 3.68v1.65H8v3.1h2.37V21h3.65v-9.57h2.46l.32-3.1h-2.78Z" />
+      </svg>
+    ),
+    web: (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm6.93 6h-3.06a15.7 15.7 0 0 0-1.42-3.15A8.05 8.05 0 0 1 18.93 8ZM12 4.04c.83 1.2 1.48 2.52 1.9 3.96h-3.8A13.2 13.2 0 0 1 12 4.04ZM4.26 14a8.27 8.27 0 0 1 0-4h3.48a16.5 16.5 0 0 0 0 4H4.26Zm.81 2h3.06c.35 1.14.83 2.2 1.42 3.15A8.05 8.05 0 0 1 5.07 16Zm3.06-8H5.07a8.05 8.05 0 0 1 4.48-3.15A15.7 15.7 0 0 0 8.13 8ZM12 19.96A13.2 13.2 0 0 1 10.1 16h3.8a13.2 13.2 0 0 1-1.9 3.96ZM14.33 14H9.67a14.7 14.7 0 0 1 0-4h4.66a14.7 14.7 0 0 1 0 4Zm.12 5.15A15.7 15.7 0 0 0 15.87 16h3.06a8.05 8.05 0 0 1-4.48 3.15ZM16.26 14a16.5 16.5 0 0 0 0-4h3.48a8.27 8.27 0 0 1 0 4h-3.48Z" />
+      </svg>
+    ),
+    phone: (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M6.62 10.79a15.1 15.1 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.01-.24c1.11.37 2.31.56 3.58.56a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C10.61 21 3 13.39 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.27.19 2.47.56 3.58a1 1 0 0 1-.25 1.01l-2.19 2.2Z" />
+      </svg>
+    ),
+    mail: (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm-.4 4.25-7.07 4.42a1 1 0 0 1-1.06 0L4.4 8.25A1 1 0 1 1 5.46 6.55L12 10.64l6.54-4.09a1 1 0 1 1 1.06 1.7Z" />
+      </svg>
+    ),
+    whatsapp: (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12.04 2a9.9 9.9 0 0 0-8.5 15.01L2.5 22l5.1-1.34A9.96 9.96 0 1 0 12.04 2Zm5.82 14.15c-.24.67-1.4 1.28-1.95 1.36-.5.08-1.12.11-1.8-.11-.42-.13-.95-.31-1.64-.61-2.88-1.24-4.76-4.14-4.9-4.33-.15-.19-1.17-1.56-1.17-2.98s.74-2.12 1-2.41c.27-.3.59-.37.78-.37h.56c.18 0 .42-.07.66.5.24.58.83 2.01.9 2.16.08.15.12.32.02.51-.1.2-.15.32-.3.5-.15.17-.31.39-.44.52-.15.15-.3.31-.13.61.17.3.76 1.25 1.63 2.02 1.12 1 2.06 1.31 2.36 1.46.3.15.47.13.64-.08.18-.2.74-.86.94-1.16.2-.3.4-.25.67-.15.28.1 1.76.83 2.06.98.3.15.5.22.57.35.08.13.08.75-.16 1.43Z" />
+      </svg>
+    ),
+  };
+
+  return icons[type] || icons.web;
 }
 
 function ModCard({ n, icon, title, body, delay }) {
