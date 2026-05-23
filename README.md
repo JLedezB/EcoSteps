@@ -20,8 +20,6 @@ The main objective of EcoSteps is to simplify social service management for stud
 - 📧 Email OTP verification and password recovery
 - 🛠️ Ticket and support system
 - 📱 Responsive modern UI/UX
-- 📑 PDF generation and document handling
-
 ---
 
 ## 🖥️ Technologies Used
