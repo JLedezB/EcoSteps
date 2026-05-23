@@ -89,8 +89,6 @@ This project integrates concepts related to:
 
 ## 🌐 Deployment
 
-Frontend deployed on Vercel:
-
 🔗 https://eco-steps.vercel.app/
 
 ---
